@@ -15,8 +15,7 @@ setup(
     description=vault_anyconfig.__description__,
     long_description=readme,
     long_description_content_type='text/markdown',
-    url=("https://bitbucket.tomtomgroup.com/projects/nav/repos/"
-         "vault-anyconfig/browse"),
+    url=("https://github.com/tomtom-international/vault-anyconfig"),
     packages=find_packages(),
     python_requires=">3.5",
     install_requires=[
