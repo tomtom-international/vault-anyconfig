@@ -19,7 +19,7 @@ setup(
     packages=find_packages(),
     python_requires=">3.5",
     install_requires=[
-        "anyconfig==0.9.8",
+        "anyconfig==0.9.7",
         "hvac==0.7.2"
     ],
     setup_requires=["pytest-runner>=4.2,<5"],
