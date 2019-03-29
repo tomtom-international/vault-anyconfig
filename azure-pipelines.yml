@@ -11,7 +11,7 @@ resources:
       ref: refs/heads/master
       # For github projects we need to define a service connection
       # See https://docs.microsoft.com/en-us/azure/devops/pipelines/yaml-schema?view=azure-devops&tabs=schema#repository-resource
-      endpoint: GitHub-TomTom-International
+      endpoint: tomtom-international
 
 jobs:
   - template: jobs/python.setup.py.yml@templates
