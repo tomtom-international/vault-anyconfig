@@ -16,6 +16,7 @@ class VaultAnyConfig(Client):
         See https://github.com/hvac/hvac/blob/master/hvac/v1/__init__.py for detailed list of arguments available.
         The Vault configuration must be within a dictionary named "vault_config" and each element's name must match the names of the parameters being
         used on the HVAC Client's init function.
+
         Args:
             - vault_config_file: [Optional] file[path] to a configuration file with Vault configuration arguments
             - args: [Optional] Arguments for an HVAC client, typically it will need at least url
@@ -38,6 +39,7 @@ class VaultAnyConfig(Client):
         See https://hvac.readthedocs.io/en/latest/usage/auth_methods/index.html for a list of HVAC auth methods.
         The Vault credentials must be within a dictionary named "vault_creds" and each element's name must match the names of the parameters of the
         desired auth function. It must also contain a "auth_method" member that matches one of the authentication methods in HVAC
+
         Args:
             - vault_creds_file: file containing the credentials for the Vault
         Returns:
@@ -62,6 +64,7 @@ class VaultAnyConfig(Client):
         """
         First updates the provided dictionary with keys from the Vault, then calls anyconfig to dump out a configuration file.
         See https://python-anyconfig.readthedocs.io/en/latest/api/anyconfig.api.html#anyconfig.api.dump for detailed invocation options.
+
         Args:
             data: configuration dict
             out: file[path] (or file-like) object to write to
@@ -73,6 +76,7 @@ class VaultAnyConfig(Client):
         """
         First updates the provided dictionary with keys from the Vault, then calls anyconfig to dump out string
         See https://python-anyconfig.readthedocs.io/en/latest/api/anyconfig.api.html#anyconfig.api.dump for detailed invocation options.
+
         Args:
             data: configuration dict
         Returns:
@@ -85,6 +89,7 @@ class VaultAnyConfig(Client):
         """
         Calls anyconfig to load the configuration file, then loads any keys specified in the configuration file from Vault
         See https://python-anyconfig.readthedocs.io/en/latest/api/anyconfig.api.html#anyconfig.api.load for detailed invocation options.
+
         Args:
             path_spec: file(s) containing configuration info to parse
         Returns:
@@ -97,6 +102,7 @@ class VaultAnyConfig(Client):
         """
         Calls anyconfig to load the string into a dictionary, then loads any keys specified in the configuration from Vault
         See https://python-anyconfig.readthedocs.io/en/latest/api/anyconfig.api.html#anyconfig.api.loads for detailed invocation options.
+
         Args:
             content: string containing configuration info to parse
         Returns:
@@ -108,6 +114,7 @@ class VaultAnyConfig(Client):
     def __process_vault_keys(self, config):
         """
         Takes the configuration loaded by AnyConfig and performs Vault secret loading and removes the vault_secrets section
+
         Args:
             - config: configuration dictionary from AnyConfig
         Returns:
@@ -121,6 +128,7 @@ class VaultAnyConfig(Client):
     def __vault_keys_retrieve(self, config):
         """
         Connects to the Vault to retrieve keys specified in the config dictionary
+
         Args:
             - config: configuration dict
         Returns:
@@ -143,6 +151,7 @@ class VaultAnyConfig(Client):
     def __nested_config(self, path_list, value):
         """
         Recursively builds a dict path from a list of strings, and sets the value
+
         Args:
             - path_list: list of strings to build a path from
             - value: value to set at the path specified
