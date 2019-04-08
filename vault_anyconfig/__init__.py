@@ -4,5 +4,5 @@
 
 __version__ = "0.0.4-dev"
 __project__ = "vault-anyconfig"
-__email__ = "john.doe@example.com"
+__email__ = "eugene.davis@tomtom.com"
 __author__ = "Eugene Davis"

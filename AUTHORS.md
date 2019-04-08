@@ -2,7 +2,7 @@
 
 ## Development Lead
 
-* Eugene Davis <john.doe@example.com>
+* Eugene Davis <eugene.davis@tomtom.com>
 
 ## Contributors
 
