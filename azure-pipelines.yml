@@ -1,4 +1,4 @@
-# Azure pipeline to build, test and deploy the grafana-inviter package.
+# Azure pipeline to build, test and deploy the vault_anyconfig package.
 
 trigger:
 - master

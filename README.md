@@ -1,5 +1,16 @@
 # VaultAnyconfig
 
+[![Azure DevOps builds](https://img.shields.io/azure-devops/build/tomtomweb/GitHub-TomTom-International/13.svg)](https://dev.azure.com/tomtomweb/GitHub-TomTom-International/_build/latest?definitionId=13&branchName=master)
+[![Azure DevOps tests](https://img.shields.io/azure-devops/tests/tomtomweb/GitHub-TomTom-International/13.svg)](https://dev.azure.com/tomtomweb/GitHub-TomTom-International/_build/latest?definitionId=13&branchName=master)
+[![Azure DevOps coverage](https://img.shields.io/azure-devops/coverage/tomtomweb/GitHub-TomTom-International/13.svg)](https://dev.azure.com/tomtomweb/GitHub-TomTom-International/_build/latest?definitionId=13&branchName=master)
+
+[![PyPI - Version](https://img.shields.io/pypi/v/vault-anyconfig.svg)](https://pypi.org/project/vault-anyconfig/)
+[![PyPI - License](https://img.shields.io/pypi/l/vault-anyconfig.svg)](https://pypi.org/project/vault-anyconfig/)
+[![PyPI - Python Versions](https://img.shields.io/pypi/pyversions/vault-anyconfig.svg)](https://pypi.org/project/vault-anyconfig/)
+[![PyPI - Format](https://img.shields.io/pypi/format/vault-anyconfig.svg)](https://pypi.org/project/vault-anyconfig/)
+[![PyPI - Status](https://img.shields.io/pypi/status/vault-anyconfig.svg)](https://pypi.org/project/vault-anyconfig/)
+[![PyUp - Updates](https://pyup.io/repos/github/tomtom-international/vault-anyconfig/shield.svg)](https://pyup.io/repos/github/tomtom-international/vault-anyconfig/)
+
 Extends the [HVAC Hashicorp Vault Client](https://github.com/hvac/hvac) with the load and dump functionality from
 [anyconfig](https://github.com/ssato/python-anyconfig). This allows automatic mixing in of secrets from Vault, allowing you to store a configuration
 file with all details populated save for secrets, and then access Hashicorp Vault to load the secrets into the in-memory dictionary.
@@ -17,7 +28,7 @@ left empty, then the Vault instance will **not** be configured, and instead only
 
 The section must be named `vault_config`, and can contain any of the parameters valid for initializing an [HVAC client](https://github.com/hvac/hvac/blob/master/hvac/v1/__init__.py).
 
-#### Example:
+#### Example
 
 ```json
 {
@@ -33,7 +44,7 @@ This provides authentication for use with the `auth_from_file` method, and must 
 which should correspond with one of the auth method from [the HVAC Client](https://hvac.readthedocs.io/en/latest/usage/auth_methods/index.html) (without the "`auth_`" prefix), e.g. `approle`. The remaining members
 should match the parameters for the specified auth method.
 
-#### Example:
+#### Example
 
 ```json
 {
@@ -52,7 +63,8 @@ and a section named `vault_secrets`. In the `vault_secrets` section, the keys ar
 and the values are the path to the secret in Vault. Note as well, the key for the secret in Vault must match the name of the key you are inserting
 into your configuration.
 
-#### Raw Config Example:
+#### Raw Config Example
+
 ```json
 {
     "acme": {
@@ -89,6 +101,7 @@ their own file(s) and use restrictive permissions on them, e.g. `400`, since the
 ### Initialization
 
 VaultAnyconfig can be initalized in three ways (for two different modes):
+
 1. From a vault configuration file (see files and formatting)
 2. By specifying the parameters used in initializing an [HVAC client](https://github.com/hvac/hvac/blob/master/hvac/v1/__init__.py).
 3. By providing no parameters (or a configuration file with an empty `vault_config` section) in which case it is in passthrough mode, where secrets are **not** loaded from Vault.
