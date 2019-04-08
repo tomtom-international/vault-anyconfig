@@ -21,5 +21,3 @@ pytest-runner==4.4
 setuptools-lint==0.6.0
 tox==3.8.4
 
-anyconfig==0.9.7
-hvac==0.7.2
