@@ -197,14 +197,22 @@ class TestConfigAccess(TestConfig):
         """
         Basic test of the dumps function
         """
-        mock_hvac_client_read.return_value = self.vault_response
+        vault_response = {
+            "data": {
+                "user": self.processed_config["acme"]["user"],
+                "password": self.processed_config["acme"]["pwd"],
+            }
+        }
+        mock_hvac_client_read.return_value = vault_response
 
         raw_config = deepcopy(self.raw_config)
+        raw_config["vault_secrets"]["acme.pwd"] = "secret/acme/server/user.password"
+        local_config = deepcopy(raw_config)
 
-        self.client.dumps(raw_config)
+        self.client.dumps(local_config)
 
         mock_hvac_client_read.assert_called_with(
-            self.raw_config["vault_secrets"]["acme.user"]
+            raw_config["vault_secrets"]["acme.user"]
         )
         mock_dumps.assert_called_with(self.processed_config)
 
@@ -213,6 +221,22 @@ class TestConfigAccess(TestConfig):
     def test_load(self, mock_hvac_client_read, mock_load):
         """
         Basic test of the load function
+        """
+        mock_hvac_client_read.return_value = self.vault_response
+        mock_load.return_value = deepcopy(self.raw_config)
+
+        assert self.client.load("in.json") == self.processed_config
+
+        mock_hvac_client_read.assert_called_with(
+            self.raw_config["vault_secrets"]["acme.user"]
+        )
+        mock_load.assert_called_with("in.json")
+
+    @patch("vault_anyconfig.vault_anyconfig.load_base")
+    @patch("vault_anyconfig.vault_anyconfig.Client.read")
+    def test_load_different_vault_key(self, mock_hvac_client_read, mock_load):
+        """
+        Tests that a Vault entry with a different key than the configuration dictionary maps correctly
         """
         mock_hvac_client_read.return_value = self.vault_response
         mock_load.return_value = deepcopy(self.raw_config)
