@@ -21,9 +21,9 @@ with open("CHANGELOG.md") as changelog_file:
 
 requirements = ["anyconfig==0.9.7", "hvac==0.7.2"]
 
-setup_requirements = ["pytest-runner",]
+setup_requirements = ["pytest-runner"]
 
-test_requirements = ["pytest", "pytest-cov", "coverage",]
+test_requirements = ["pytest", "pytest-cov", "coverage"]
 
 setup(
     author=vault_anyconfig.__author__,
@@ -41,11 +41,7 @@ setup(
         "Operating System :: OS Independent",
     ],
     description="Describe in a short sentence your Python package.",
-    entry_points={
-        "console_scripts": [
-            "vault-anyconfig=vault_anyconfig.cli:main",
-        ],
-    },
+    entry_points={"console_scripts": ["vault-anyconfig=vault_anyconfig.cli:main"]},
     install_requires=requirements,
     license="Apache Software License 2.0",
     long_description=readme + "\n\n" + changelog,
