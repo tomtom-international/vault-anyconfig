@@ -87,7 +87,7 @@ class VaultAnyConfig(Client):
         updated_data = self.__process_vault_keys(data)
 
         if process_secret_files:
-            self._VaultAnyConfig__process_vault_files(updated_data)
+            self.__process_vault_files(updated_data)
 
         dump_base(updated_data, out, **args)
 
@@ -104,7 +104,7 @@ class VaultAnyConfig(Client):
         updated_data = self.__process_vault_keys(data)
 
         if process_secret_files:
-            self._VaultAnyConfig__process_vault_files(updated_data)
+            self.__process_vault_files(updated_data)
 
         return dumps_base(updated_data, **args)
 
@@ -121,7 +121,7 @@ class VaultAnyConfig(Client):
         config = load_base(path_spec, **args)
 
         if process_secret_files:
-            self._VaultAnyConfig__process_vault_files(config)
+            self.__process_vault_files(config)
 
         return self.__process_vault_keys(config)
 
@@ -138,7 +138,7 @@ class VaultAnyConfig(Client):
         config = loads_base(content, **args)
 
         if process_secret_files:
-            self._VaultAnyConfig__process_vault_files(config)
+            self.__process_vault_files(config)
 
         return self.__process_vault_keys(config)
 
