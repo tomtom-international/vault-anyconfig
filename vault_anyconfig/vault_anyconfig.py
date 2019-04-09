@@ -157,7 +157,17 @@ class VaultAnyConfig(Client):
 
         for secret, path in config.get("vault_secrets", {}).items():
             config_key_path = secret.split(".")
-            read_vault_secret = self.read(path)["data"][config_key_path[-1]]
+            secret_path = path
+
+            # Optionally map the key in the configuration to a different key in the Vault
+            secret_path_split = secret_path.split(".")
+            if len(secret_path_split) > 1:
+                secret_path = "".join(secret_path_split[:-1])
+                secret_key = secret_path_split[-1]
+            else:
+                secret_key = config_key_path[-1]
+
+            read_vault_secret = self.read(secret_path)["data"][secret_key]
             config_part = self.__nested_config(config_key_path, read_vault_secret)
             merge(vault_config_parts, config_part)
 
