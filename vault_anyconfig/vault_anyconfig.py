@@ -2,6 +2,9 @@
 Provides an extension to the HVAC Hashicorp Vault client for reading and writing configuration files.
 """
 from warnings import warn
+from os import chmod
+from os.path import normpath, isfile
+from stat import S_IRUSR, S_IWUSR
 
 from hvac import Client
 from anyconfig import (
@@ -72,7 +75,7 @@ class VaultAnyConfig(Client):
         method(**creds)
         return self.is_authenticated()
 
-    def dump(self, data, out, **args):
+    def dump(self, data, out, process_secret_files=True, **args):
         """
         First updates the provided dictionary with keys from the Vault, then calls anyconfig to dump out a configuration file.
         See https://python-anyconfig.readthedocs.io/en/latest/api/anyconfig.api.html#anyconfig.api.dump for detailed invocation options.
@@ -82,9 +85,13 @@ class VaultAnyConfig(Client):
             out: file[path] (or file-like) object to write to
         """
         updated_data = self.__process_vault_keys(data)
+
+        if process_secret_files:
+            self._VaultAnyConfig__process_vault_files(updated_data)
+
         dump_base(updated_data, out, **args)
 
-    def dumps(self, data, **args):
+    def dumps(self, data, process_secret_files=True, **args):
         """
         First updates the provided dictionary with keys from the Vault, then calls anyconfig to dump out string
         See https://python-anyconfig.readthedocs.io/en/latest/api/anyconfig.api.html#anyconfig.api.dump for detailed invocation options.
@@ -95,9 +102,13 @@ class VaultAnyConfig(Client):
             String with the configuration
         """
         updated_data = self.__process_vault_keys(data)
+
+        if process_secret_files:
+            self._VaultAnyConfig__process_vault_files(updated_data)
+
         return dumps_base(updated_data, **args)
 
-    def load(self, path_spec, **args):
+    def load(self, path_spec, process_secret_files=True, **args):
         """
         Calls anyconfig to load the configuration file, then loads any keys specified in the configuration file from Vault
         See https://python-anyconfig.readthedocs.io/en/latest/api/anyconfig.api.html#anyconfig.api.load for detailed invocation options.
@@ -108,9 +119,13 @@ class VaultAnyConfig(Client):
             configuration dictionary
         """
         config = load_base(path_spec, **args)
+
+        if process_secret_files:
+            self._VaultAnyConfig__process_vault_files(config)
+
         return self.__process_vault_keys(config)
 
-    def loads(self, content, **args):
+    def loads(self, content, process_secret_files=True, **args):
         """
         Calls anyconfig to load the string into a dictionary, then loads any keys specified in the configuration from Vault
         See https://python-anyconfig.readthedocs.io/en/latest/api/anyconfig.api.html#anyconfig.api.loads for detailed invocation options.
@@ -121,6 +136,10 @@ class VaultAnyConfig(Client):
             configuration dictionary
         """
         config = loads_base(content, **args)
+
+        if process_secret_files:
+            self._VaultAnyConfig__process_vault_files(config)
+
         return self.__process_vault_keys(config)
 
     def __process_vault_keys(self, config):
@@ -180,3 +199,51 @@ class VaultAnyConfig(Client):
         else:
             config_part[path_list[0]] = self.__nested_config(path_list[1:], value)
         return config_part
+
+    def __process_vault_files(self, config):
+        """
+        Gets the files specified in vault_files and writes them to disc in the specified location.
+        Over-writes the file if it exists, and leave it with read-only for the executing user (if it has permission to do so).
+        Args:
+            - config: configuration dict
+        """
+        for file_path, secret in config.get("vault_files", {}).items():
+            secret_path = ".".join(secret.split(".")[0:-1])
+            secret_key = secret.split(".")[-1]
+
+            self.save_file_from_vault(normpath(file_path), secret_path, secret_key)
+
+    def save_file_from_vault(self, file_path, secret_path, secret_key):
+        """
+        Retrieves a file (stored as a string) from a Hashicorp Vault secret and renders it to the specified file.
+        Attempts to set the permission of the file to read-only.
+        Args:
+            - file_path: file path to write secret file to
+            - secret_path: secret's path in Vault
+            - secret_key: key in the secret in Vault to access
+        """
+        secret_file_string = self.read(secret_path)["data"][secret_key]
+        if isfile(file_path):
+            try:
+                chmod(file_path, S_IWUSR)
+            except PermissionError:
+                warn(
+                    "Unable to set the file permission to write for {} before updating its contents.".format(
+                        file_path
+                    ),
+                    UserWarning,
+                )
+
+        with open(file_path, "w") as secret_file:
+            secret_file.write(secret_file_string)
+
+        # Set file to read-only for user
+        try:
+            chmod(file_path, S_IRUSR)
+        except PermissionError:
+            warn(
+                "Unable to set the file permission to read-only for {} after updating its contents.".format(
+                    file_path
+                ),
+                UserWarning,
+            )
