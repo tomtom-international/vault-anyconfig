@@ -1,10 +1,10 @@
 """
 Tests for the vault_anyconfig package.
 """
-#pylint: disable=attribute-defined-outside-init
-#pylint: disable=too-few-public-methods
-#pylint: disable=no-self-use
-#pylint: disable=unused-argument
+# pylint: disable=attribute-defined-outside-init
+# pylint: disable=too-few-public-methods
+# pylint: disable=no-self-use
+# pylint: disable=unused-argument
 from unittest.mock import patch
 from copy import deepcopy
 from json import dumps as jdumps
@@ -13,19 +13,15 @@ import pytest
 
 from vault_anyconfig.vault_anyconfig import VaultAnyConfig
 
+
 class TestConfigInit:
     """
     Tests for the init function
     """
-    vault_config = {
-        "vault_config": {
-            "url": "http://localhost",
-        }
-    }
 
-    empty_vault_config = {
-        "vault_config": {}
-    }
+    vault_config = {"vault_config": {"url": "http://localhost"}}
+
+    empty_vault_config = {"vault_config": {}}
 
     @patch("vault_anyconfig.vault_anyconfig.Client.__init__")
     def test_init_no_file(self, mock_hvac_client):
@@ -79,10 +75,12 @@ class TestConfigInit:
         assert client.pass_through_flag
         mock_load.assert_called_with("config.json")
 
+
 class TestConfig:
     """
     Parent class performing basic setup of the client
     """
+
     @patch("vault_anyconfig.vault_anyconfig.Client.__init__")
     def setup(self, mock_hvac_client):
         """
@@ -90,15 +88,17 @@ class TestConfig:
         """
         self.client = VaultAnyConfig(url="http://localhost")
 
+
 class TestConfigAuth(TestConfig):
     """
     Tests for the auth convenience method
     """
+
     vault_creds = {
         "vault_creds": {
             "role_id": "test-role-id",
             "secret_id": "test-secret-id",
-            "auth_method": "approle"
+            "auth_method": "approle",
         }
     }
 
@@ -115,7 +115,10 @@ class TestConfigAuth(TestConfig):
         assert self.client.auth_from_file("config.json")
 
         mock_load.assert_called_with("config.json")
-        mock_auth_approle.assert_called_with(role_id=self.vault_creds["vault_creds"]["role_id"], secret_id=self.vault_creds["vault_creds"]["secret_id"])
+        mock_auth_approle.assert_called_with(
+            role_id=self.vault_creds["vault_creds"]["role_id"],
+            secret_id=self.vault_creds["vault_creds"]["secret_id"],
+        )
         mock_is_authenticated.assert_called_with()
 
     @patch("vault_anyconfig.vault_anyconfig.Client.is_authenticated")
@@ -141,19 +144,18 @@ class TestConfigAuth(TestConfig):
         client = VaultAnyConfig()
         assert client.auth_from_file("config.json")
 
+
 class TestConfigAccess(TestConfig):
     """
     Tests for the load(s) and dump(s) functions
     """
+
     raw_config = {
-        "acme": {
-            "host": "https://acme.com",
-            "cert_path": "/secret/cert"
-        },
+        "acme": {"host": "https://acme.com", "cert_path": "/secret/cert"},
         "vault_secrets": {
             "acme.user": "secret/acme/server/user",
-            "acme.pwd": "secret/acme/server/user"
-        }
+            "acme.pwd": "secret/acme/server/user",
+        },
     }
 
     processed_config = {
@@ -161,14 +163,14 @@ class TestConfigAccess(TestConfig):
             "host": raw_config["acme"]["host"],
             "cert_path": raw_config["acme"]["cert_path"],
             "user": "test_user",
-            "pwd": "test_password"
+            "pwd": "test_password",
         }
     }
 
     vault_response = {
         "data": {
             "user": processed_config["acme"]["user"],
-            "pwd": processed_config["acme"]["pwd"]
+            "pwd": processed_config["acme"]["pwd"],
         }
     }
 
@@ -184,7 +186,9 @@ class TestConfigAccess(TestConfig):
 
         self.client.dump(raw_config, "out.json")
 
-        mock_hvac_client_read.assert_called_with(self.raw_config["vault_secrets"]["acme.user"])
+        mock_hvac_client_read.assert_called_with(
+            self.raw_config["vault_secrets"]["acme.user"]
+        )
         mock_dump.assert_called_with(self.processed_config, "out.json")
 
     @patch("vault_anyconfig.vault_anyconfig.dumps_base")
@@ -199,7 +203,9 @@ class TestConfigAccess(TestConfig):
 
         self.client.dumps(raw_config)
 
-        mock_hvac_client_read.assert_called_with(self.raw_config["vault_secrets"]["acme.user"])
+        mock_hvac_client_read.assert_called_with(
+            self.raw_config["vault_secrets"]["acme.user"]
+        )
         mock_dumps.assert_called_with(self.processed_config)
 
     @patch("vault_anyconfig.vault_anyconfig.load_base")
@@ -213,7 +219,9 @@ class TestConfigAccess(TestConfig):
 
         assert self.client.load("in.json") == self.processed_config
 
-        mock_hvac_client_read.assert_called_with(self.raw_config["vault_secrets"]["acme.user"])
+        mock_hvac_client_read.assert_called_with(
+            self.raw_config["vault_secrets"]["acme.user"]
+        )
         mock_load.assert_called_with("in.json")
 
     @patch("vault_anyconfig.vault_anyconfig.loads_base")
@@ -227,7 +235,9 @@ class TestConfigAccess(TestConfig):
         string_raw_config = jdumps(self.raw_config)
         self.client.loads(string_raw_config)
 
-        mock_hvac_client_read.assert_called_with(self.raw_config["vault_secrets"]["acme.user"])
+        mock_hvac_client_read.assert_called_with(
+            self.raw_config["vault_secrets"]["acme.user"]
+        )
         mock_loads.assert_called_with(string_raw_config)
 
     @patch("vault_anyconfig.vault_anyconfig.load_base")

@@ -4,12 +4,20 @@ Provides an extension to the HVAC Hashicorp Vault client for reading and writing
 from warnings import warn
 
 from hvac import Client
-from anyconfig import dump as dump_base, dumps as dumps_base, load as load_base, loads as loads_base, merge
+from anyconfig import (
+    dump as dump_base,
+    dumps as dumps_base,
+    load as load_base,
+    loads as loads_base,
+    merge,
+)
+
 
 class VaultAnyConfig(Client):
     """
     Extends the HVAC Hashicorp Vault client to be able to read/write configuration files and update them with information from a Vault instance.
     """
+
     def __init__(self, vault_config_file=None, **args):
         """
         Creates a connection to Vault with either the arguments normally provided to an HVAC client instance, or a configuration file containing them.
@@ -26,7 +34,7 @@ class VaultAnyConfig(Client):
         if not vault_config_file:
             vault_config = args
         else:
-            vault_config = load_base(vault_config_file).get('vault_config', {})
+            vault_config = load_base(vault_config_file).get("vault_config", {})
 
         if vault_config:
             super().__init__(**vault_config)
@@ -48,14 +56,18 @@ class VaultAnyConfig(Client):
         if self.pass_through_flag:
             return True
 
-        creds = load_base(vault_creds_file)['vault_creds']
-        auth_method = "auth_" + creds['auth_method']
-        creds.pop('auth_method', None)
+        creds = load_base(vault_creds_file)["vault_creds"]
+        auth_method = "auth_" + creds["auth_method"]
+        creds.pop("auth_method", None)
 
         try:
             method = getattr(self, auth_method)
         except AttributeError:
-            raise NotImplementedError("HVAC does not provide {} as an authentication method".format(auth_method))
+            raise NotImplementedError(
+                "HVAC does not provide {} as an authentication method".format(
+                    auth_method
+                )
+            )
 
         method(**creds)
         return self.is_authenticated()
@@ -122,7 +134,7 @@ class VaultAnyConfig(Client):
         """
         vault_config_parts = self.__vault_keys_retrieve(config)
         merge(config, vault_config_parts)
-        config.pop('vault_secrets', None)
+        config.pop("vault_secrets", None)
         return config
 
     def __vault_keys_retrieve(self, config):
@@ -137,12 +149,15 @@ class VaultAnyConfig(Client):
         vault_config_parts = {}
 
         if self.pass_through_flag:
-            warn("VaultAnyconfig is set to Passthrough mode, but secrets are configured in configuration. These secrets will not be loaded.", UserWarning)
+            warn(
+                "VaultAnyconfig is set to Passthrough mode, but secrets are configured in configuration. These secrets will not be loaded.",
+                UserWarning,
+            )
             return vault_config_parts
 
         for secret, path in config.get("vault_secrets", {}).items():
             config_key_path = secret.split(".")
-            read_vault_secret = self.read(path)['data'][config_key_path[-1]]
+            read_vault_secret = self.read(path)["data"][config_key_path[-1]]
             config_part = self.__nested_config(config_key_path, read_vault_secret)
             merge(vault_config_parts, config_part)
 
