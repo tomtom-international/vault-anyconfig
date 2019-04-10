@@ -18,7 +18,7 @@ from vault_anyconfig.vault_anyconfig import VaultAnyConfig
 from .test_config import TestConfig
 
 
-class TestConfigMixIn(TestConfig):
+class TestConfigLoadAndDump(TestConfig):
     """
     Tests for the load(s) and dump(s) functions
     """
