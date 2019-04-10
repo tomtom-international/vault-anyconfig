@@ -217,11 +217,20 @@ class VaultAnyConfig(Client):
         Args:
             - config: configuration dict
         """
+        if self.pass_through_flag:
+            warn(
+                "VaultAnyconfig is set to Passthrough mode, but secret_files are configured in configuration. These files will not be loaded.",
+                UserWarning,
+            )
+            return
+
         for file_path, secret in config.get("vault_files", {}).items():
             secret_path = ".".join(secret.split(".")[0:-1])
             secret_key = secret.split(".")[-1]
 
             self.save_file_from_vault(normpath(file_path), secret_path, secret_key)
+
+        return
 
     def save_file_from_vault(self, file_path, secret_path, secret_key):
         """
