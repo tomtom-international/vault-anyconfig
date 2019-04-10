@@ -225,8 +225,13 @@ class VaultAnyConfig(Client):
             return
 
         for file_path, secret in config.get("vault_files", {}).items():
-            secret_path = ".".join(secret.split(".")[0:-1])
-            secret_key = secret.split(".")[-1]
+            secret_split = secret.split(".")
+            if len(secret_split) > 1:
+                secret_path = ".".join(secret_split[0:-1])
+                secret_key = secret_split[-1]
+            else:
+                secret_path = secret
+                secret_key = "file"
 
             self.save_file_from_vault(normpath(file_path), secret_path, secret_key)
 
