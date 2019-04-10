@@ -142,6 +142,41 @@ class VaultAnyConfig(Client):
 
         return self.__process_vault_keys(config)
 
+    def save_file_from_vault(self, file_path, secret_path, secret_key):
+        """
+        Retrieves a file (stored as a string) from a Hashicorp Vault secret and renders it to the specified file.
+        Attempts to set the permission of the file to read-only.
+        Args:
+            - file_path: file path to write secret file to
+            - secret_path: secret's path in Vault
+            - secret_key: key in the secret in Vault to access
+        """
+        secret_file_string = self.read(secret_path)["data"][secret_key]
+        if isfile(file_path):
+            try:
+                chmod(file_path, S_IWUSR)
+            except PermissionError:
+                warn(
+                    "Unable to set the file permission to write for {} before updating its contents.".format(
+                        file_path
+                    ),
+                    UserWarning,
+                )
+
+        with open(file_path, "w") as secret_file:
+            secret_file.write(secret_file_string)
+
+        # Set file to read-only for user
+        try:
+            chmod(file_path, S_IRUSR)
+        except PermissionError:
+            warn(
+                "Unable to set the file permission to read-only for {} after updating its contents.".format(
+                    file_path
+                ),
+                UserWarning,
+            )
+
     def __process_vault_keys(self, config):
         """
         Takes the configuration loaded by AnyConfig and performs Vault secret loading and removes the vault_secrets section
@@ -237,37 +272,3 @@ class VaultAnyConfig(Client):
 
         return
 
-    def save_file_from_vault(self, file_path, secret_path, secret_key):
-        """
-        Retrieves a file (stored as a string) from a Hashicorp Vault secret and renders it to the specified file.
-        Attempts to set the permission of the file to read-only.
-        Args:
-            - file_path: file path to write secret file to
-            - secret_path: secret's path in Vault
-            - secret_key: key in the secret in Vault to access
-        """
-        secret_file_string = self.read(secret_path)["data"][secret_key]
-        if isfile(file_path):
-            try:
-                chmod(file_path, S_IWUSR)
-            except PermissionError:
-                warn(
-                    "Unable to set the file permission to write for {} before updating its contents.".format(
-                        file_path
-                    ),
-                    UserWarning,
-                )
-
-        with open(file_path, "w") as secret_file:
-            secret_file.write(secret_file_string)
-
-        # Set file to read-only for user
-        try:
-            chmod(file_path, S_IRUSR)
-        except PermissionError:
-            warn(
-                "Unable to set the file permission to read-only for {} after updating its contents.".format(
-                    file_path
-                ),
-                UserWarning,
-            )
