@@ -3,7 +3,7 @@ Provides an extension to the HVAC Hashicorp Vault client for reading and writing
 """
 from warnings import warn
 from os import chmod
-from os.path import normpath, isfile
+from os.path import abspath, isfile
 from stat import S_IRUSR, S_IWUSR
 
 from hvac import Client
@@ -257,7 +257,7 @@ class VaultAnyConfig(Client):
                 secret_path = secret
                 secret_key = "file"
 
-            self.save_file_from_vault(normpath(real_file_path), secret_path, secret_key)
+            self.save_file_from_vault(abspath(real_file_path), secret_path, secret_key)
 
         return
 
