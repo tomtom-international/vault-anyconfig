@@ -260,6 +260,7 @@ class TestWriteFileFromConfigFile(TestConfig):
             ("somefile", "/secret/file", ""),
             ("somefile", " /secret/with/space", ""),
             ("somefile", "/secret/with/space ", ""),
+            ("\\some\\windows\\path", "/secret/file", "crt"),
         ],
     )
     @patch("vault_anyconfig.vault_anyconfig.chmod")
