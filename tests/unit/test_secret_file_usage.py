@@ -9,6 +9,7 @@ from unittest.mock import patch, mock_open, call, Mock
 from copy import deepcopy
 from json import dumps as jdumps
 from stat import S_IRUSR, S_IWUSR
+from os.path import abspath
 
 import pytest
 
@@ -27,6 +28,7 @@ class TestWriteFile(TestConfig):
         self.file_contents = "secret_string_to_write"
 
         self.file_path = "/some/file/secret"
+        self.file_path_normalized = abspath(self.file_path)
         self.secret_path = "/secret/acme/cert"
 
     @patch("vault_anyconfig.vault_anyconfig.chmod")
@@ -42,10 +44,10 @@ class TestWriteFile(TestConfig):
 
         mock_hvac_client_read.assert_called_once_with(self.secret_path)
 
-        mock_open_handle.assert_called_once_with(self.file_path, "w")
+        mock_open_handle.assert_called_once_with(self.file_path_normalized, "w")
         mock_open_handle().write.assert_called_once_with(self.file_contents)
 
-        mock_chmod.assert_called_once_with(self.file_path, S_IRUSR)
+        mock_chmod.assert_called_once_with(self.file_path_normalized, S_IRUSR)
 
     @patch("vault_anyconfig.vault_anyconfig.chmod")
     @patch("builtins.open", new_callable=mock_open)
@@ -64,7 +66,7 @@ class TestWriteFile(TestConfig):
 
         mock_hvac_client_read.assert_called_once_with(self.secret_path)
 
-        mock_open_handle.assert_called_once_with(self.file_path, "w")
+        mock_open_handle.assert_called_once_with(self.file_path_normalized, "w")
         mock_open_handle().write.assert_called_once_with(self.file_contents)
 
         chmod_calls = [call(self.file_path, S_IWUSR), call(self.file_path, S_IRUSR)]
@@ -90,7 +92,7 @@ class TestWriteFile(TestConfig):
 
         mock_hvac_client_read.assert_called_once_with(self.secret_path)
 
-        mock_open_handle.assert_called_once_with(self.file_path, "w")
+        mock_open_handle.assert_called_once_with(self.file_path_normalized, "w")
         mock_open_handle().write.assert_called_once_with(self.file_contents)
 
         chmod_calls = [call(self.file_path, S_IWUSR)]
@@ -114,7 +116,7 @@ class TestWriteFile(TestConfig):
 
         mock_hvac_client_read.assert_called_once_with(self.secret_path)
 
-        mock_open_handle.assert_called_once_with(self.file_path, "w")
+        mock_open_handle.assert_called_once_with(self.file_path_normalized, "w")
         mock_open_handle().write.assert_called_once_with(self.file_contents)
 
         chmod_calls = [call(self.file_path, S_IRUSR)]
@@ -127,6 +129,7 @@ class TestWriteFileFromConfigFile(TestConfig):
         self.file_contents = "secret_string_to_write"
 
         self.file_path = "/some/file/secret"
+        self.file_path_normalized = abspath(self.file_path)
         self.secret_path = "/secret/acme/cert"
 
         self.raw_config = {
@@ -160,10 +163,10 @@ class TestWriteFileFromConfigFile(TestConfig):
 
         mock_hvac_client_read.assert_called_once_with(self.secret_path)
 
-        mock_open_handle.assert_called_once_with(self.file_path, "w")
+        mock_open_handle.assert_called_once_with(self.file_path_normalized, "w")
         mock_open_handle().write.assert_called_once_with(self.file_contents)
 
-        mock_chmod.assert_called_once_with(self.file_path, S_IRUSR)
+        mock_chmod.assert_called_once_with(self.file_path_normalized, S_IRUSR)
 
     @patch("vault_anyconfig.vault_anyconfig.chmod")
     @patch("builtins.open", new_callable=mock_open)
@@ -187,10 +190,10 @@ class TestWriteFileFromConfigFile(TestConfig):
 
         mock_hvac_client_read.assert_called_once_with(self.secret_path)
 
-        mock_open_handle.assert_called_once_with(self.file_path, "w")
+        mock_open_handle.assert_called_once_with(self.file_path_normalized, "w")
         mock_open_handle().write.assert_called_once_with(self.file_contents)
 
-        mock_chmod.assert_called_once_with(self.file_path, S_IRUSR)
+        mock_chmod.assert_called_once_with(self.file_path_normalized, S_IRUSR)
 
     @patch("vault_anyconfig.vault_anyconfig.dump_base")
     @patch("vault_anyconfig.vault_anyconfig.Client.read")
@@ -260,7 +263,6 @@ class TestWriteFileFromConfigFile(TestConfig):
             ("somefile", "/secret/file", ""),
             ("somefile", " /secret/with/space", ""),
             ("somefile", "/secret/with/space ", ""),
-            ("\\some\\windows\\path", "/secret/file", "crt"),
         ],
     )
     @patch("vault_anyconfig.vault_anyconfig.chmod")
@@ -300,7 +302,7 @@ class TestWriteFileFromConfigFile(TestConfig):
 
         mock_hvac_client_read.assert_called_once_with(secret_path)
 
-        mock_open_handle.assert_called_once_with(file_path, "w")
+        mock_open_handle.assert_called_once_with(abspath(file_path), "w")
         mock_open_handle().write.assert_called_once_with(self.file_contents)
 
-        mock_chmod.assert_called_once_with(file_path, S_IRUSR)
+        mock_chmod.assert_called_once_with(abspath(file_path), S_IRUSR)
