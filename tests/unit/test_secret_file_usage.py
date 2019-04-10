@@ -130,7 +130,7 @@ class TestWriteFileFromConfigFile(TestConfig):
         self.secret_path = "/secret/acme/cert"
 
         self.raw_config = {
-            "acme": {"host": "https://acme.com", "cert_path": "/secret/cert"},
+            "acme": {"host": "https://acme.com", "cert_path": self.file_path},
             "vault_files": {self.file_path: self.secret_path},
         }
 
@@ -152,6 +152,33 @@ class TestWriteFileFromConfigFile(TestConfig):
         """
         Basic test of the dump function
         """
+        mock_hvac_client_read.return_value = self.vault_response
+
+        raw_config = deepcopy(self.raw_config)
+
+        self.client.dump(raw_config, "out.json")
+
+        mock_hvac_client_read.assert_called_once_with(self.secret_path)
+
+        mock_open_handle.assert_called_once_with(self.file_path, "w")
+        mock_open_handle().write.assert_called_once_with(self.file_contents)
+
+        mock_chmod.assert_called_once_with(self.file_path, S_IRUSR)
+
+    @patch("vault_anyconfig.vault_anyconfig.chmod")
+    @patch("builtins.open", new_callable=mock_open)
+    @patch("vault_anyconfig.vault_anyconfig.dump_base")
+    @patch("vault_anyconfig.vault_anyconfig.Client.read")
+    def test_dump_config_file_reference(
+        self, mock_hvac_client_read, mock_dump, mock_open_handle, mock_chmod
+    ):
+        """
+        Tests that the vault_files section can reference a file specified in the configuration
+        """
+        by_ref_file_path = "acme.cert_path"
+        self.raw_config["vault_files"] = {by_ref_file_path: self.secret_path}
+        self.processed_config["vault_files"] = {by_ref_file_path: self.secret_path}
+
         mock_hvac_client_read.return_value = self.vault_response
 
         raw_config = deepcopy(self.raw_config)

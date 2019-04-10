@@ -222,28 +222,10 @@ class VaultAnyConfig(Client):
                 secret_key = config_key_path[-1]
 
             read_vault_secret = self.read(secret_path)["data"][secret_key]
-            config_part = self.__nested_config(config_key_path, read_vault_secret)
+            config_part = self.__get_nested_config(config_key_path, read_vault_secret)
             merge(vault_config_parts, config_part)
 
         return vault_config_parts
-
-    def __nested_config(self, path_list, value):
-        """
-        Recursively builds a dict path from a list of strings, and sets the value
-
-        Args:
-            - path_list: list of strings to build a path from
-            - value: value to set at the path specified
-        Returns:
-            dictionary
-        """
-        config_part = {}
-
-        if len(path_list) == 1:
-            config_part[path_list[0]] = value
-        else:
-            config_part[path_list[0]] = self.__nested_config(path_list[1:], value)
-        return config_part
 
     def __process_vault_files(self, config):
         """
@@ -260,6 +242,13 @@ class VaultAnyConfig(Client):
             return
 
         for file_path, secret in config.get("vault_files", {}).items():
+            # Check if the filepath actually is a key in the configuration file, and use it if it is
+            real_file_path = self.__get_value_nested_config(
+                file_path.split("."), config
+            )
+            if not real_file_path:
+                real_file_path = file_path
+
             secret_split = secret.split(".")
             if len(secret_split) > 1:
                 secret_path = ".".join(secret_split[0:-1])
@@ -268,7 +257,39 @@ class VaultAnyConfig(Client):
                 secret_path = secret
                 secret_key = "file"
 
-            self.save_file_from_vault(normpath(file_path), secret_path, secret_key)
+            self.save_file_from_vault(normpath(real_file_path), secret_path, secret_key)
 
         return
 
+    def __get_nested_config(self, path_list, value):
+        """
+        Recursively builds a dict path from a list of strings, and sets the value
+
+        Args:
+            - path_list: list of strings to build a path from
+            - value: value to set at the path specified
+        Returns:
+            dictionary
+        """
+        config_part = {}
+
+        if len(path_list) == 1:
+            config_part[path_list[0]] = value
+        else:
+            config_part[path_list[0]] = self.__get_nested_config(path_list[1:], value)
+        return config_part
+
+    def __get_value_nested_config(self, path_list, config):
+        """
+        Recursively builds a dict path from a list of strings, and determines if it exists
+
+        Args:
+            - path_list: list of strings to build a path from
+        Returns:
+            value at path
+        """
+        local_config = config.get(path_list[0], None)
+
+        if len(path_list) <= 1 or not local_config:
+            return config.get(path_list[0], None)
+        return self.__get_value_nested_config(path_list[1:], local_config)
