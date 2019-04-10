@@ -152,27 +152,28 @@ class VaultAnyConfig(Client):
             - secret_key: key in the secret in Vault to access
         """
         secret_file_string = self.read(secret_path)["data"][secret_key]
+        real_file_path = abspath(file_path)
         if isfile(file_path):
             try:
-                chmod(file_path, S_IWUSR)
+                chmod(real_file_path, S_IWUSR)
             except PermissionError:
                 warn(
                     "Unable to set the file permission to write for {} before updating its contents.".format(
-                        file_path
+                        real_file_path
                     ),
                     UserWarning,
                 )
 
-        with open(file_path, "w") as secret_file:
+        with open(real_file_path, "w") as secret_file:
             secret_file.write(secret_file_string)
 
         # Set file to read-only for user
         try:
-            chmod(file_path, S_IRUSR)
+            chmod(real_file_path, S_IRUSR)
         except PermissionError:
             warn(
                 "Unable to set the file permission to read-only for {} after updating its contents.".format(
-                    file_path
+                    real_file_path
                 ),
                 UserWarning,
             )

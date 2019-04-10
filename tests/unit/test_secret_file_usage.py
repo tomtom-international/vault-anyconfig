@@ -69,7 +69,10 @@ class TestWriteFile(TestConfig):
         mock_open_handle.assert_called_once_with(self.file_path_normalized, "w")
         mock_open_handle().write.assert_called_once_with(self.file_contents)
 
-        chmod_calls = [call(self.file_path, S_IWUSR), call(self.file_path, S_IRUSR)]
+        chmod_calls = [
+            call(self.file_path_normalized, S_IWUSR),
+            call(self.file_path_normalized, S_IRUSR),
+        ]
         mock_chmod.assert_has_calls(chmod_calls, any_order=False)
 
     @patch("vault_anyconfig.vault_anyconfig.chmod")
@@ -95,7 +98,7 @@ class TestWriteFile(TestConfig):
         mock_open_handle.assert_called_once_with(self.file_path_normalized, "w")
         mock_open_handle().write.assert_called_once_with(self.file_contents)
 
-        chmod_calls = [call(self.file_path, S_IWUSR)]
+        chmod_calls = [call(self.file_path_normalized, S_IWUSR)]
         mock_chmod.assert_has_calls(chmod_calls, any_order=False)
 
     @patch("vault_anyconfig.vault_anyconfig.chmod")
@@ -119,7 +122,7 @@ class TestWriteFile(TestConfig):
         mock_open_handle.assert_called_once_with(self.file_path_normalized, "w")
         mock_open_handle().write.assert_called_once_with(self.file_contents)
 
-        chmod_calls = [call(self.file_path, S_IRUSR)]
+        chmod_calls = [call(self.file_path_normalized, S_IRUSR)]
         mock_chmod.assert_has_calls(chmod_calls, any_order=False)
 
 
