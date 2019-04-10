@@ -60,8 +60,13 @@ should match the parameters for the specified auth method.
 
 The main configuration file should consist of the configuration sections you need **without** the secrets included (unless passthrough mode is desired)
 and a section named `vault_secrets`. In the `vault_secrets` section, the keys are dot separated paths for the keys to insert into your configuration,
-and the values are the path to the secret in Vault. Note as well, the key for the secret in Vault must match the name of the key you are inserting
-into your configuration.
+and the values are the path to the secret in Vault. Please see the `vault_secrets` usage section for the different ways to specify secrets.
+
+There is an additional section, `vault_files` that allows you to specify a filepath (or reference a file path in a configuration section) and map it
+to a Vault secret. If this mode is used, then it will over-write any file which already exists at the specified path, and then set read-only
+permissions on the file. If the appropriate permissions are missing, then an error will be thrown. This section should only been used when passing
+the secret string in memory is not possible, for example if the application is only able to read a certificate from a file. Unlike the `vault_secrets`
+section this section will be included in the returned dictionary, so if this feature is used the calling application must handle this section.
 
 #### Raw Config Example
 
@@ -69,11 +74,16 @@ into your configuration.
 {
     "acme": {
         "host": "http://acme.com",
-        "site-name": "great products"
+        "site-name": "great products",
+        "secret-key": "/var/acme/acme.key"
     },
     "vault_secrets": {
         "acme.user": "secret/acme/user",
         "acme.pwd": "secret/acme/user"
+    },
+    "vault_files": {
+        "acme.secret-key": "secret/acme/secret-key",
+        "/var/acme/very-secret.key": "secret/acme/very-secret"
     }
 }
 ```
@@ -85,11 +95,73 @@ into your configuration.
     "acme": {
         "host": "http://acme.com",
         "site-name": "great products",
+        "secret-key": "/var/acme/acme.key",
         "user": "sample-user",
         "pwd": "sample-password"
+    },
+    "vault_files": {
+        "acme.secret-key": "secret/acme/secret-key",
+        "/var/acme/very-secret.key": "secret/acme/very-secret"
+    }
+}
+````
+
+##### vault_secrets Usage
+
+A `vault_secrets` entry must have a `config key` and a `secret path`. The `config_key` is a dot separated path to the configuration item that should
+be added or updated. The `secret_path` is the path where the secret resides in Vault. As an example:
+
+```json
+{
+    "acme": {},
+    "vault_secrets": {
+        "acme.pwd": "secret/acme/secret-password"
+    }    
+}
+```
+
+In `vault_secrets`, `acme.pwd` is the `config_key` and `secret/acme/secret-password` is the `secret_path`. The key used on the `secret_path` in Vault
+will be `pwd`.
+
+By default, the final portional of the `config key` will be used as the key to the secret within Vault. However, it is possible to add a unique key
+with a dot separator on the `secret_path`. By way of example:
+
+```json
+{
+    "acme": {},
+    "vault_secrets": {
+        "acme.pwd": "secret/acme/secret-password.password"
+    }     
+}
+```
+This example is effectively the same as the first, but when accessing the `secret_path` in Vault, the key `password` will be used rather than `pwd`.
+
+##### vault_files Usage
+
+There are two major ways to use the `vault_files` section. The first is to specify a file location directly as the key, and the secret as the path.
+For example:
+```json
+{
+    "vault_files": {
+        "/var/acme/secret.key": "secret/acme/secret-key"
     }
 }
 ```
+
+The second method is to reference a key in the configuration. This way if the secret file's location is configurable, changes to its location will be
+automatically handled when writing out the file. **Warning!** If the file location changes, it will not be deleted! For example:
+```json
+{
+    "acme": {
+        "secret-key": "/opt/server/acme.key"
+    },
+    "vault_files": {
+        "acme.secret-key": "secret/acme/secret-key"
+    }
+}
+```
+
+By default, `secret_path` uses `file` as the key within the Vault secret. However, the `secret_path` can use the same dot notation used in `vault_secrets` to specify the key, e.g. `secret/acme/secret-key.key`
 
 ### Guidance for Configuration Files
 
