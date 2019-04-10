@@ -1,151 +1,24 @@
 """
-Tests for the vault_anyconfig package.
+Tests for the configuration loading and dumping capabilities, including Vault mixin
 """
+
 # pylint: disable=attribute-defined-outside-init
 # pylint: disable=too-few-public-methods
 # pylint: disable=no-self-use
 # pylint: disable=unused-argument
-from unittest.mock import patch
+from unittest.mock import patch, mock_open, call, Mock
 from copy import deepcopy
 from json import dumps as jdumps
+from stat import S_IRUSR, S_IWUSR
 
 import pytest
 
 from vault_anyconfig.vault_anyconfig import VaultAnyConfig
 
-
-class TestConfigInit:
-    """
-    Tests for the init function
-    """
-
-    vault_config = {"vault_config": {"url": "http://localhost"}}
-
-    empty_vault_config = {"vault_config": {}}
-
-    @patch("vault_anyconfig.vault_anyconfig.Client.__init__")
-    def test_init_no_file(self, mock_hvac_client):
-        """
-        Tests the init function without a config file (i.e. filling the parameters directly)
-        """
-        client = VaultAnyConfig(url="http://localhost")
-        assert not client.pass_through_flag
-        mock_hvac_client.assert_called_with(url="http://localhost")
-
-    @patch("vault_anyconfig.vault_anyconfig.load_base")
-    @patch("vault_anyconfig.vault_anyconfig.Client.__init__")
-    def test_init_with_file(self, mock_hvac_client, mock_load):
-        """
-        Tests the init function with an init file
-        """
-        mock_load.return_value = self.vault_config
-
-        client = VaultAnyConfig(vault_config_file="config.json")
-
-        assert not client.pass_through_flag
-        mock_load.assert_called_with("config.json")
-        mock_hvac_client.assert_called_with(url="http://localhost")
-
-    def test_init_passthrough_args(self):
-        """
-        Tests that with an empty argument set, the passthrough flag is set
-        """
-        client = VaultAnyConfig(**self.empty_vault_config["vault_config"])
-        assert client.pass_through_flag
-
-    @patch("vault_anyconfig.vault_anyconfig.load_base")
-    def test_init_passthrough_file(self, mock_load):
-        """
-        Tests that with a vault configuration file where the vault_config section is empty, the passthrough flag is set
-        """
-        mock_load.return_value = self.empty_vault_config
-
-        client = VaultAnyConfig(vault_config_file="config.json")
-        assert client.pass_through_flag
-        mock_load.assert_called_with("config.json")
-
-    @patch("vault_anyconfig.vault_anyconfig.load_base")
-    def test_init_passthrough_file_no_vault_config_section(self, mock_load):
-        """
-        Tests that with a vault configuration file where there is no vault_config section, the passthrough flag is set
-        """
-        mock_load.return_value = {}
-
-        client = VaultAnyConfig(vault_config_file="config.json")
-        assert client.pass_through_flag
-        mock_load.assert_called_with("config.json")
+from .test_config import TestConfig
 
 
-class TestConfig:
-    """
-    Parent class performing basic setup of the client
-    """
-
-    @patch("vault_anyconfig.vault_anyconfig.Client.__init__")
-    def setup(self, mock_hvac_client):
-        """
-        Configures a mock instance of the HVAC client
-        """
-        self.client = VaultAnyConfig(url="http://localhost")
-
-
-class TestConfigAuth(TestConfig):
-    """
-    Tests for the auth convenience method
-    """
-
-    vault_creds = {
-        "vault_creds": {
-            "role_id": "test-role-id",
-            "secret_id": "test-secret-id",
-            "auth_method": "approle",
-        }
-    }
-
-    @patch("vault_anyconfig.vault_anyconfig.Client.is_authenticated")
-    @patch("vault_anyconfig.vault_anyconfig.Client.auth_approle")
-    @patch("vault_anyconfig.vault_anyconfig.load_base")
-    def test_auth_from_file(self, mock_load, mock_auth_approle, mock_is_authenticated):
-        """
-        Basic test for the auth_from_file function
-        """
-        mock_load.return_value = deepcopy(self.vault_creds)
-        mock_is_authenticated.return_value = True
-
-        assert self.client.auth_from_file("config.json")
-
-        mock_load.assert_called_with("config.json")
-        mock_auth_approle.assert_called_with(
-            role_id=self.vault_creds["vault_creds"]["role_id"],
-            secret_id=self.vault_creds["vault_creds"]["secret_id"],
-        )
-        mock_is_authenticated.assert_called_with()
-
-    @patch("vault_anyconfig.vault_anyconfig.Client.is_authenticated")
-    @patch("vault_anyconfig.vault_anyconfig.load_base")
-    def test_auth_from_file_bad_method(self, mock_load, mock_is_authenticated):
-        """
-        Test that the exception is thrown as expected when using a bad authentication method
-        """
-        vault_creds = deepcopy(self.vault_creds)
-        vault_creds["vault_creds"]["auth_method"] = "nothing"
-        mock_load.return_value = vault_creds
-        mock_is_authenticated.return_value = True
-
-        with pytest.raises(NotImplementedError):
-            self.client.auth_from_file("config.json")
-
-        mock_load.assert_called_with("config.json")
-
-    def test_auth_with_passthrough(self):
-        """
-        Tests that the auth_from_file will simply be bypassed when using an instance with passthrough
-        """
-        client = VaultAnyConfig()
-        assert client.auth_from_file("config.json")
-
-
-class TestConfigAccess(TestConfig):
+class TestConfigMixIn(TestConfig):
     """
     Tests for the load(s) and dump(s) functions
     """
@@ -197,14 +70,22 @@ class TestConfigAccess(TestConfig):
         """
         Basic test of the dumps function
         """
-        mock_hvac_client_read.return_value = self.vault_response
+        vault_response = {
+            "data": {
+                "user": self.processed_config["acme"]["user"],
+                "password": self.processed_config["acme"]["pwd"],
+            }
+        }
+        mock_hvac_client_read.return_value = vault_response
 
         raw_config = deepcopy(self.raw_config)
+        raw_config["vault_secrets"]["acme.pwd"] = "secret/acme/server/user.password"
+        local_config = deepcopy(raw_config)
 
-        self.client.dumps(raw_config)
+        self.client.dumps(local_config)
 
         mock_hvac_client_read.assert_called_with(
-            self.raw_config["vault_secrets"]["acme.user"]
+            raw_config["vault_secrets"]["acme.user"]
         )
         mock_dumps.assert_called_with(self.processed_config)
 
@@ -213,6 +94,22 @@ class TestConfigAccess(TestConfig):
     def test_load(self, mock_hvac_client_read, mock_load):
         """
         Basic test of the load function
+        """
+        mock_hvac_client_read.return_value = self.vault_response
+        mock_load.return_value = deepcopy(self.raw_config)
+
+        assert self.client.load("in.json") == self.processed_config
+
+        mock_hvac_client_read.assert_called_with(
+            self.raw_config["vault_secrets"]["acme.user"]
+        )
+        mock_load.assert_called_with("in.json")
+
+    @patch("vault_anyconfig.vault_anyconfig.load_base")
+    @patch("vault_anyconfig.vault_anyconfig.Client.read")
+    def test_load_different_vault_key(self, mock_hvac_client_read, mock_load):
+        """
+        Tests that a Vault entry with a different key than the configuration dictionary maps correctly
         """
         mock_hvac_client_read.return_value = self.vault_response
         mock_load.return_value = deepcopy(self.raw_config)
