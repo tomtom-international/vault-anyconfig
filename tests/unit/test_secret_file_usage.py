@@ -286,9 +286,23 @@ class TestFileWritingFuzzing(TestConfig):
     @patch("vault_anyconfig.vault_anyconfig.dump_base")
     @patch("vault_anyconfig.vault_anyconfig.Client.read")
     @given(
-        strat.text(min_size=1, alphabet=strat.characters(blacklist_categories=("C"))),
-        strat.text(min_size=1, alphabet=strat.characters(blacklist_categories=("C"))),
-        strat.text(),
+        file_path=strat.text(
+            min_size=1, alphabet=strat.characters(blacklist_categories=("C"))
+        ),
+        secret_path=strat.text(
+            min_size=1,
+            alphabet=strat.characters(
+                blacklist_categories=("C"),
+                blacklist_characters=".",  # Since we separately specify the key, we cannot include "." in the secret path
+            ),
+        ),
+        secret_key=strat.text(
+            min_size=1,
+            alphabet=strat.characters(
+                blacklist_categories=("C"),
+                blacklist_characters=".",  # Keys require actual values, not more dot separators
+            ),
+        ),
     )
     @example(
         file_path="/some/path/secret.cert", secret_path="/secret/file", secret_key="crt"
@@ -312,7 +326,6 @@ class TestFileWritingFuzzing(TestConfig):
     @example(file_path="somefile", secret_path="/secret/file", secret_key="")
     @example(file_path="somefile", secret_path=" /secret/with/space", secret_key="")
     @example(file_path="somefile", secret_path="/secret/with/space ", secret_key="")
-    @example(file_path="0", secret_path=".", secret_key="")
     def test_dump_different_file_paths_and_secrets(
         self,
         mock_hvac_client_read,
