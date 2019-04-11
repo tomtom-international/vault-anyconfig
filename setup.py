@@ -19,7 +19,7 @@ with open("README.md") as readme_file:
 with open("CHANGELOG.md") as changelog_file:
     changelog = changelog_file.read()
 
-requirements = ["anyconfig==0.9.7", "hvac==0.7.2"]
+requirements = ["anyconfig==0.9.7", "hvac==0.7.2", "hypothesis==4.15.0"]
 
 setup_requirements = ["pytest-runner"]
 

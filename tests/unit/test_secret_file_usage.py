@@ -12,6 +12,8 @@ from stat import S_IRUSR, S_IWUSR
 from os.path import abspath
 
 import pytest
+from hypothesis import given, example
+import hypothesis.strategies as strat
 
 from vault_anyconfig.vault_anyconfig import VaultAnyConfig
 
@@ -255,28 +257,66 @@ class TestWriteFileFromConfigFile(TestConfig):
         mock_hvac_client_read.assert_not_called()
         mock_loads.assert_called_with(string_raw_config)
 
-    @pytest.mark.parametrize(
-        "file_path, secret_path, secret_key",
-        [
-            ("/some/path/secret.cert", "/secret/file", "crt"),
-            ("/some/path/.hiddenfile", "/secret/hidden/file", ""),
-            (".hiddenfile", "/secret/hidden/file", ""),
-            (" .hiddenfile_with_space", "/secret/hidden/file", ""),
-            (".hiddenfile_with_space ", "/secret/hidden/file", ""),
-            ("somefile", "/secret/file", ""),
-            ("somefile", " /secret/with/space", ""),
-            ("somefile", "/secret/with/space ", ""),
-        ],
-    )
+
+class TestFileWritingFuzzing(TestConfig):
+    def setup(self):
+        super().setup()
+        self.file_contents = "secret_string_to_write"
+
+        self.file_path = "/some/file/secret"
+        self.file_path_normalized = abspath(self.file_path)
+        self.secret_path = "/secret/acme/cert"
+
+        self.raw_config = {
+            "acme": {"host": "https://acme.com", "cert_path": self.file_path},
+            "vault_files": {},
+        }
+
+        self.processed_config = {
+            "acme": {
+                "host": self.raw_config["acme"]["host"],
+                "cert_path": self.raw_config["acme"]["cert_path"],
+            },
+            "vault_files": {},
+        }
+
+        self.vault_response = {"data": {"file": self.file_contents}}
+
     @patch("vault_anyconfig.vault_anyconfig.chmod")
-    @patch("builtins.open", new_callable=mock_open)
     @patch("vault_anyconfig.vault_anyconfig.dump_base")
     @patch("vault_anyconfig.vault_anyconfig.Client.read")
+    @given(
+        strat.text(min_size=1, alphabet=strat.characters(blacklist_categories=("C"))),
+        strat.text(min_size=1, alphabet=strat.characters(blacklist_categories=("C"))),
+        strat.text(),
+    )
+    @example(
+        file_path="/some/path/secret.cert", secret_path="/secret/file", secret_key="crt"
+    )
+    @example(
+        file_path="/some/path/.hiddenfile",
+        secret_path="/secret/hidden/file",
+        secret_key="",
+    )
+    @example(file_path=".hiddenfile", secret_path="/secret/hidden/file", secret_key="")
+    @example(
+        file_path=" .hiddenfile_with_space",
+        secret_path="/secret/hidden/file",
+        secret_key="",
+    )
+    @example(
+        file_path=".hiddenfile_with_space ",
+        secret_path="/secret/hidden/file",
+        secret_key="",
+    )
+    @example(file_path="somefile", secret_path="/secret/file", secret_key="")
+    @example(file_path="somefile", secret_path=" /secret/with/space", secret_key="")
+    @example(file_path="somefile", secret_path="/secret/with/space ", secret_key="")
+    @example(file_path="0", secret_path=".", secret_key="")
     def test_dump_different_file_paths_and_secrets(
         self,
         mock_hvac_client_read,
         mock_dump,
-        mock_open_handle,
         mock_chmod,
         file_path,
         secret_path,
@@ -285,27 +325,28 @@ class TestWriteFileFromConfigFile(TestConfig):
         """
         Tests that secret keys, whitespace in paths, and hidden files are all handled correctly
         """
-        del self.raw_config["vault_files"][self.file_path]
-        del self.processed_config["vault_files"][self.file_path]
-
-        if secret_key != "":
-            self.vault_response = {"data": {secret_key: self.file_contents}}
-            secret_key = "." + secret_key
-        else:
-            self.vault_response = {"data": {"file": self.file_contents}}
-
-        self.raw_config["vault_files"][file_path] = secret_path + secret_key
-        self.processed_config["vault_files"][file_path] = secret_path + secret_key
-
-        mock_hvac_client_read.return_value = self.vault_response
 
         raw_config = deepcopy(self.raw_config)
+        processed_config = deepcopy(self.processed_config)
+        vault_response = deepcopy(self.vault_response)
 
-        self.client.dump(raw_config, "out.json")
+        if secret_key != "":
+            vault_response = {"data": {secret_key: self.file_contents}}
+            secret_key = "." + secret_key
+        else:
+            vault_response = {"data": {"file": self.file_contents}}
 
-        mock_hvac_client_read.assert_called_once_with(secret_path)
+        raw_config["vault_files"][file_path] = secret_path + secret_key
+        processed_config["vault_files"][file_path] = secret_path + secret_key
 
-        mock_open_handle.assert_called_once_with(abspath(file_path), "w")
-        mock_open_handle().write.assert_called_once_with(self.file_contents)
+        mock_hvac_client_read.return_value = vault_response
 
-        mock_chmod.assert_called_once_with(abspath(file_path), S_IRUSR)
+        with patch("builtins.open", new_callable=mock_open) as mock_open_handle:
+            local_raw_config = deepcopy(raw_config)
+            self.client.dump(local_raw_config, "out.json")
+            mock_open_handle.assert_called_once_with(abspath(file_path), "w")
+            mock_open_handle().write.assert_called_once_with(self.file_contents)
+
+        mock_hvac_client_read.assert_called_with(secret_path)
+
+        mock_chmod.assert_called_with(abspath(file_path), S_IRUSR)
