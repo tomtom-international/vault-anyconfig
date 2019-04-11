@@ -35,24 +35,6 @@ class TestWriteFile(TestConfig):
 
     @patch("vault_anyconfig.vault_anyconfig.chmod")
     @patch("builtins.open", new_callable=mock_open)
-    @patch("vault_anyconfig.vault_anyconfig.Client.read")
-    def test_write_new_file(self, mock_hvac_client_read, mock_open_handle, mock_chmod):
-        """
-        Retrieves a string from a (mock) HVAC client and writes it to a (mock) file.
-        """
-        mock_hvac_client_read.return_value = {"data": {"file": self.file_contents}}
-
-        self.client.save_file_from_vault(self.file_path, self.secret_path, "file")
-
-        mock_hvac_client_read.assert_called_once_with(self.secret_path)
-
-        mock_open_handle.assert_called_once_with(self.file_path_normalized, "w")
-        mock_open_handle().write.assert_called_once_with(self.file_contents)
-
-        mock_chmod.assert_called_once_with(self.file_path_normalized, S_IRUSR)
-
-    @patch("vault_anyconfig.vault_anyconfig.chmod")
-    @patch("builtins.open", new_callable=mock_open)
     @patch("vault_anyconfig.vault_anyconfig.isfile")
     @patch("vault_anyconfig.vault_anyconfig.Client.read")
     def test_write_existing_file(
@@ -363,3 +345,32 @@ class TestFileWritingFuzzing(TestConfig):
         mock_hvac_client_read.assert_called_with(secret_path)
 
         mock_chmod.assert_called_with(abspath(file_path), S_IRUSR)
+
+    @patch("vault_anyconfig.vault_anyconfig.chmod")
+    @patch("vault_anyconfig.vault_anyconfig.Client.read")
+    @given(
+        file_path=strat.text(
+            min_size=1, alphabet=strat.characters(blacklist_categories=("C"))
+        ),
+        secret_path=strat.text(
+            min_size=1, alphabet=strat.characters(blacklist_categories=("C"))
+        ),
+        secret_key=strat.text(),
+    )
+    def test_write_new_file(
+        self, mock_hvac_client_read, mock_chmod, file_path, secret_path, secret_key
+    ):
+        """
+        Retrieves a string from a (mock) HVAC client and writes it to a (mock) file.
+        """
+        mock_hvac_client_read.return_value = {"data": {"file": self.file_contents}}
+        file_path_normalized = abspath(file_path)
+
+        with patch("builtins.open", new_callable=mock_open) as mock_open_handle:
+            self.client.save_file_from_vault(file_path, secret_path, "file")
+            mock_open_handle.assert_called_once_with(file_path_normalized, "w")
+            mock_open_handle().write.assert_called_once_with(self.file_contents)
+
+        mock_hvac_client_read.assert_called_with(secret_path)
+
+        mock_chmod.assert_called_with(file_path_normalized, S_IRUSR)
