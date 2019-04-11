@@ -251,13 +251,12 @@ class VaultAnyConfig(Client):
                 real_file_path = file_path
 
             secret_split = secret.split(".")
-            if len(secret_split) > 1:
+            if len(secret_split) > 1 and secret[-1] != "." and secret[0] != ".":
                 secret_path = ".".join(secret_split[0:-1])
                 secret_key = secret_split[-1]
             else:
                 secret_path = secret
                 secret_key = "file"
-
             self.save_file_from_vault(abspath(real_file_path), secret_path, secret_key)
 
         return
