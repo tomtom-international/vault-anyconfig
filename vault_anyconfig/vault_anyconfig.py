@@ -257,7 +257,7 @@ class VaultAnyConfig(Client):
             else:
                 secret_path = secret
                 secret_key = "file"
-            self.save_file_from_vault(abspath(real_file_path), secret_path, secret_key)
+            self.save_file_from_vault(real_file_path, secret_path, secret_key)
 
         return
 
