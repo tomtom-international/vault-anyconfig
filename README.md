@@ -163,6 +163,9 @@ automatically handled when writing out the file. **Warning!** If the file locati
 
 By default, `secret_path` uses `file` as the key within the Vault secret. However, the `secret_path` can use the same dot notation used in `vault_secrets` to specify the key, e.g. `secret/acme/secret-key.key`
 
+**Warning!** The `secret_path` string can only use a dot (`.`) if separating the path from the key. Extra dots will cause vault_anyconfig to throw an
+error.
+
 ### Guidance for Configuration Files
 
 Although all three files can be combined into a single file, it is recommend that you separate out the `vault_creds` and `vault_config` sections into
