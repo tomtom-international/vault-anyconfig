@@ -1,10 +1,7 @@
 """
 Tests for the auth convenience method
 """
-# pylint: disable=attribute-defined-outside-init
-# pylint: disable=too-few-public-methods
-# pylint: disable=no-self-use
-# pylint: disable=unused-argument
+
 from unittest.mock import patch, mock_open, call, Mock
 from copy import deepcopy
 from json import dumps as jdumps

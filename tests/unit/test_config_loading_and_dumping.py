@@ -2,10 +2,6 @@
 Tests for the configuration loading and dumping capabilities, including Vault mixin
 """
 
-# pylint: disable=attribute-defined-outside-init
-# pylint: disable=too-few-public-methods
-# pylint: disable=no-self-use
-# pylint: disable=unused-argument
 from unittest.mock import patch, mock_open, call, Mock
 from json import dumps as jdumps
 from stat import S_IRUSR, S_IWUSR
