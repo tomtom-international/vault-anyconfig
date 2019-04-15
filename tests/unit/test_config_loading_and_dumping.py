@@ -2,12 +2,7 @@
 Tests for the configuration loading and dumping capabilities, including Vault mixin
 """
 
-# pylint: disable=attribute-defined-outside-init
-# pylint: disable=too-few-public-methods
-# pylint: disable=no-self-use
-# pylint: disable=unused-argument
 from unittest.mock import patch, mock_open, call, Mock
-from copy import deepcopy
 from json import dumps as jdumps
 from stat import S_IRUSR, S_IWUSR
 
@@ -15,171 +10,235 @@ import pytest
 
 from vault_anyconfig.vault_anyconfig import VaultAnyConfig
 
-from .test_config import TestConfig
 
-
-class TestConfigLoadAndDump(TestConfig):
+@pytest.fixture
+def gen_input_config():
     """
-    Tests for the load(s) and dump(s) functions
+    Generates an input configuration for providing to a vault client in tests
     """
 
-    raw_config = {
-        "acme": {"host": "https://acme.com", "cert_path": "/secret/cert"},
-        "vault_secrets": {
+    def _gen_input_config(
+        vault_secrets={
             "acme.user": "secret/acme/server/user",
             "acme.pwd": "secret/acme/server/user",
-        },
-    }
-
-    processed_config = {
-        "acme": {
-            "host": raw_config["acme"]["host"],
-            "cert_path": raw_config["acme"]["cert_path"],
-            "user": "test_user",
-            "pwd": "test_password",
         }
-    }
-
-    vault_response = {
-        "data": {
-            "user": processed_config["acme"]["user"],
-            "pwd": processed_config["acme"]["pwd"],
+    ):
+        input_config = {
+            "acme": {"host": "https://acme.com", "cert_path": "/secret/cert"},
+            "vault_secrets": vault_secrets,
         }
-    }
+        return input_config
 
-    @patch("vault_anyconfig.vault_anyconfig.dump_base")
-    @patch("vault_anyconfig.vault_anyconfig.Client.read")
-    def test_dump(self, mock_hvac_client_read, mock_dump):
-        """
-        Basic test of the dump function
-        """
-        mock_hvac_client_read.return_value = self.vault_response
+    return _gen_input_config
 
-        raw_config = deepcopy(self.raw_config)
 
-        self.client.dump(raw_config, "out.json")
+@pytest.fixture
+def gen_processed_config(gen_input_config):
+    """
+    Provides a processed configuration (what should result after running input through the client)
+    """
 
-        mock_hvac_client_read.assert_called_with(
-            self.raw_config["vault_secrets"]["acme.user"]
-        )
-        mock_dump.assert_called_with(self.processed_config, "out.json")
-
-    @patch("vault_anyconfig.vault_anyconfig.dumps_base")
-    @patch("vault_anyconfig.vault_anyconfig.Client.read")
-    def test_dumps(self, mock_hvac_client_read, mock_dumps):
-        """
-        Basic test of the dumps function
-        """
-        vault_response = {
-            "data": {
-                "user": self.processed_config["acme"]["user"],
-                "password": self.processed_config["acme"]["pwd"],
+    def _gen_processed_config(input_config=gen_input_config()):
+        processed_config = {
+            "acme": {
+                "host": input_config["acme"]["host"],
+                "cert_path": input_config["acme"]["cert_path"],
+                "user": "test_user",
+                "pwd": "test_password",
             }
         }
-        mock_hvac_client_read.return_value = vault_response
+        return processed_config
 
-        raw_config = deepcopy(self.raw_config)
-        raw_config["vault_secrets"]["acme.pwd"] = "secret/acme/server/user.password"
-        local_config = deepcopy(raw_config)
+    return _gen_processed_config
 
-        self.client.dumps(local_config)
 
-        mock_hvac_client_read.assert_called_with(
-            raw_config["vault_secrets"]["acme.user"]
-        )
-        mock_dumps.assert_called_with(self.processed_config)
+@pytest.fixture
+def gen_vault_response(gen_processed_config):
+    """
+    Provides the vault response for a given processed configuration file
+    """
 
-    @patch("vault_anyconfig.vault_anyconfig.load_base")
-    @patch("vault_anyconfig.vault_anyconfig.Client.read")
-    def test_load(self, mock_hvac_client_read, mock_load):
-        """
-        Basic test of the load function
-        """
-        mock_hvac_client_read.return_value = self.vault_response
-        mock_load.return_value = deepcopy(self.raw_config)
+    def _gen_vault_repsonse(
+        processed_config=gen_processed_config(), user_key="user", pwd_key="pwd"
+    ):
+        vault_response = {
+            "data": {
+                user_key: processed_config["acme"]["user"],
+                pwd_key: processed_config["acme"]["pwd"],
+            }
+        }
+        return vault_response
 
-        assert self.client.load("in.json") == self.processed_config
+    return _gen_vault_repsonse
 
-        mock_hvac_client_read.assert_called_with(
-            self.raw_config["vault_secrets"]["acme.user"]
-        )
-        mock_load.assert_called_with("in.json")
 
-    @patch("vault_anyconfig.vault_anyconfig.load_base")
-    @patch("vault_anyconfig.vault_anyconfig.Client.read")
-    def test_load_different_vault_key(self, mock_hvac_client_read, mock_load):
-        """
-        Tests that a Vault entry with a different key than the configuration dictionary maps correctly
-        """
-        mock_hvac_client_read.return_value = self.vault_response
-        mock_load.return_value = deepcopy(self.raw_config)
+@patch("vault_anyconfig.vault_anyconfig.dump_base")
+@patch("vault_anyconfig.vault_anyconfig.Client.read")
+def test_dump(
+    mock_hvac_client_read,
+    mock_dump,
+    localhost_client,
+    gen_input_config,
+    gen_processed_config,
+    gen_vault_response,
+):
+    """
+    Basic test of the dump function
+    """
+    mock_hvac_client_read.return_value = gen_vault_response()
 
-        assert self.client.load("in.json") == self.processed_config
+    localhost_client.dump(gen_input_config(), "out.json")
 
-        mock_hvac_client_read.assert_called_with(
-            self.raw_config["vault_secrets"]["acme.user"]
-        )
-        mock_load.assert_called_with("in.json")
+    mock_hvac_client_read.assert_called_with(
+        gen_input_config()["vault_secrets"]["acme.user"]
+    )
+    mock_dump.assert_called_with(gen_processed_config(), "out.json")
 
-    @patch("vault_anyconfig.vault_anyconfig.loads_base")
-    @patch("vault_anyconfig.vault_anyconfig.Client.read")
-    def test_loads(self, mock_hvac_client_read, mock_loads):
-        """
-        Basic test of the loads function
-        """
-        mock_hvac_client_read.return_value = self.vault_response
-        mock_loads.return_value = deepcopy(self.raw_config)
-        string_raw_config = jdumps(self.raw_config)
-        self.client.loads(string_raw_config)
 
-        mock_hvac_client_read.assert_called_with(
-            self.raw_config["vault_secrets"]["acme.user"]
-        )
-        mock_loads.assert_called_with(string_raw_config)
+@patch("vault_anyconfig.vault_anyconfig.dumps_base")
+@patch("vault_anyconfig.vault_anyconfig.Client.read")
+def test_dumps(
+    mock_hvac_client_read,
+    mock_dumps,
+    localhost_client,
+    gen_input_config,
+    gen_processed_config,
+    gen_vault_response,
+):
+    """
+    Basic test of the dumps function
+    """
+    mock_hvac_client_read.return_value = gen_vault_response(pwd_key="password")
 
-    @patch("vault_anyconfig.vault_anyconfig.load_base")
-    @patch("vault_anyconfig.vault_anyconfig.Client.read")
-    def test_empty_path_list(self, mock_hvac_client_read, mock_load):
-        """
-        Tests behavior when an empty key is used in the configuration dictionary
-        """
-        mock_hvac_client_read.return_value = self.vault_response
-        raw_config_edited = deepcopy(self.raw_config)
-        raw_config_edited["vault_secrets"][""] = "some_secret"
-        mock_load.return_value = deepcopy(raw_config_edited)
+    input_config = gen_input_config()
+    input_config["vault_secrets"]["acme.pwd"] = "secret/acme/server/user.password"
 
-        with pytest.raises(KeyError):
-            self.client.load("in.json")
+    localhost_client.dumps(input_config)
 
-        mock_hvac_client_read.assert_called_with(raw_config_edited["vault_secrets"][""])
-        mock_load.assert_called_with("in.json")
+    mock_hvac_client_read.assert_called_with(
+        gen_input_config()["vault_secrets"]["acme.user"]
+    )
+    mock_dumps.assert_called_with(gen_processed_config())
 
-    @patch("vault_anyconfig.vault_anyconfig.load_base")
-    def test_no_vault_secrets(self, mock_load):
-        """
-        Test the client when there is no Vault configuration performed, but there is a vault_secrets section in the configuration file
-        """
-        raw_config_edited = deepcopy(self.raw_config)
-        del raw_config_edited["vault_secrets"]
-        mock_load.return_value = deepcopy(raw_config_edited)
 
-        self.client.load("in.json")
+@patch("vault_anyconfig.vault_anyconfig.load_base")
+@patch("vault_anyconfig.vault_anyconfig.Client.read")
+def test_load(
+    mock_hvac_client_read,
+    mock_load,
+    localhost_client,
+    gen_input_config,
+    gen_processed_config,
+    gen_vault_response,
+):
+    """
+    Basic test of the load function
+    """
+    mock_hvac_client_read.return_value = gen_vault_response()
+    mock_load.return_value = gen_input_config()
 
-        mock_load.assert_called_with("in.json")
+    assert localhost_client.load("in.json") == gen_processed_config()
 
-    @patch("vault_anyconfig.vault_anyconfig.load_base")
-    def test_load_no_vault_with_secrets(self, mock_load):
-        """
-        Basic test of the load function
-        """
-        mock_load.return_value = deepcopy(self.raw_config)
+    mock_hvac_client_read.assert_called_with(
+        gen_input_config()["vault_secrets"]["acme.user"]
+    )
+    mock_load.assert_called_with("in.json")
 
-        raw_config_edited = deepcopy(self.raw_config)
-        del raw_config_edited["vault_secrets"]
 
-        client = VaultAnyConfig()
+@patch("vault_anyconfig.vault_anyconfig.load_base")
+@patch("vault_anyconfig.vault_anyconfig.Client.read")
+def test_load_different_vault_key(
+    mock_hvac_client_read,
+    mock_load,
+    localhost_client,
+    gen_input_config,
+    gen_processed_config,
+    gen_vault_response,
+):
+    """
+    Tests that a Vault entry with a different key than the configuration dictionary maps correctly
+    """
+    mock_hvac_client_read.return_value = gen_vault_response()
+    mock_load.return_value = gen_input_config()
 
-        with pytest.warns(UserWarning):
-            assert client.load("in.json") == raw_config_edited
+    assert localhost_client.load("in.json") == gen_processed_config()
 
-        mock_load.assert_called_with("in.json")
+    mock_hvac_client_read.assert_called_with(
+        gen_input_config()["vault_secrets"]["acme.user"]
+    )
+    mock_load.assert_called_with("in.json")
+
+
+@patch("vault_anyconfig.vault_anyconfig.loads_base")
+@patch("vault_anyconfig.vault_anyconfig.Client.read")
+def test_loads(
+    mock_hvac_client_read,
+    mock_loads,
+    localhost_client,
+    gen_input_config,
+    gen_vault_response,
+):
+    """
+    Basic test of the loads function
+    """
+    mock_hvac_client_read.return_value = gen_vault_response()
+    mock_loads.return_value = gen_input_config()
+    input_config_json = jdumps(gen_input_config())
+    localhost_client.loads(input_config_json)
+
+    mock_hvac_client_read.assert_called_with(
+        gen_input_config()["vault_secrets"]["acme.user"]
+    )
+    mock_loads.assert_called_with(input_config_json)
+
+
+@patch("vault_anyconfig.vault_anyconfig.load_base")
+@patch("vault_anyconfig.vault_anyconfig.Client.read")
+def test_empty_path_list(
+    mock_hvac_client_read,
+    mock_load,
+    localhost_client,
+    gen_input_config,
+    gen_vault_response,
+):
+    """
+    Tests behavior when an empty key is used in the configuration dictionary
+    """
+    mock_hvac_client_read.return_value = gen_vault_response()
+    mock_load.return_value = gen_input_config(vault_secrets={"": "some_secret"})
+
+    with pytest.raises(KeyError):
+        localhost_client.load("in.json")
+
+    mock_hvac_client_read.assert_called_with("some_secret")
+    mock_load.assert_called_with("in.json")
+
+
+@patch("vault_anyconfig.vault_anyconfig.load_base")
+def test_no_vault_secrets(mock_load, localhost_client, gen_input_config):
+    """
+    Test the client when there is no Vault configuration performed, but there is a empty vault_secrets section in the configuration file
+    """
+    mock_load.return_value = gen_input_config(vault_secrets={})
+
+    localhost_client.load("in.json")
+
+    mock_load.assert_called_with("in.json")
+
+
+@patch("vault_anyconfig.vault_anyconfig.load_base")
+def test_load_no_vault_with_secrets(mock_load, gen_input_config):
+    """
+    Basic test of the load function
+    """
+    mock_load.return_value = gen_input_config()
+
+    input_config_edited = gen_input_config()
+    del input_config_edited["vault_secrets"]
+
+    client = VaultAnyConfig()
+
+    with pytest.warns(UserWarning):
+        assert client.load("in.json") == input_config_edited
+
+    mock_load.assert_called_with("in.json")
