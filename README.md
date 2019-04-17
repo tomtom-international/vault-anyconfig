@@ -62,28 +62,26 @@ The main configuration file should consist of the configuration sections you nee
 and a section named `vault_secrets`. In the `vault_secrets` section, the keys are dot separated paths for the keys to insert into your configuration,
 and the values are the path to the secret in Vault. Please see the `vault_secrets` usage section for the different ways to specify secrets.
 
-There is an additional section, `vault_files` that allows you to specify a filepath (or reference a file path in a configuration section) and map it
-to a Vault secret. If this mode is used, then it will over-write any file which already exists at the specified path, and then set read-only
-permissions on the file. If the appropriate permissions are missing, then an error will be thrown. This section should only been used when passing
-the secret string in memory is not possible, for example if the application is only able to read a certificate from a file. Unlike the `vault_secrets`
-section this section will be included in the returned dictionary, so if this feature is used the calling application must handle this section.
+Additionaly, a `vault_files` section is included to retrieve files from Vault and write them to disk. This is discouraged (minimizing the time that
+secrets are persisted should be prefered), but included for use with legacy applications which require a file path for secrets (e.g. TLS certificates).
 
 #### Raw Config Example
 
 ```json
 {
-    "acme": {
+    "website": {
         "host": "http://acme.com",
-        "site-name": "great products",
-        "secret-key": "/var/acme/acme.key"
+        "site-name": "Great Products for Coyotes",
+        "tls-key": "/etc/web/acme.com.key",
+        "tls-cert": "/etc/web/acme.com.crt"
     },
     "vault_secrets": {
-        "acme.user": "secret/acme/user",
-        "acme.pwd": "secret/acme/user"
+        "website.db_user": "secret/mysql/customer.user",
+        "website.db_pwd": "secret/mysql/customer.password"
     },
     "vault_files": {
-        "acme.secret-key": "secret/acme/secret-key",
-        "/var/acme/very-secret.key": "secret/acme/very-secret"
+        "website.tls-key": "secret/website/proxy.key",
+        "website.tls-cert": "secret/website/proxy.cert"
     }
 }
 ```
@@ -92,16 +90,17 @@ section this section will be included in the returned dictionary, so if this fea
 
 ```json
 {
-    "acme": {
+    "website": {
         "host": "http://acme.com",
         "site-name": "great products",
-        "secret-key": "/var/acme/acme.key",
-        "user": "sample-user",
-        "pwd": "sample-password"
+        "tls-key": "/var/acme/acme.com.key",
+        "tls-cert": "/var/acme/acme.com.crt",
+        "db_user": "customer",
+        "db_pwd": "customer-password"
     },
     "vault_files": {
-        "acme.secret-key": "secret/acme/secret-key",
-        "/var/acme/very-secret.key": "secret/acme/very-secret"
+        "website.tls-key": "secret/website/proxy.key",
+        "website.tls-cert": "secret/website/proxy.cert"
     }
 }
 ````
@@ -113,50 +112,79 @@ be added or updated. The `secret_path` is the path where the secret resides in V
 
 ```json
 {
-    "acme": {},
+    "website": {},
     "vault_secrets": {
-        "acme.pwd": "secret/acme/secret-password"
+       "website.db_user": "secret/mysql/customer"
     }    
 }
 ```
 
-In `vault_secrets`, `acme.pwd` is the `config_key` and `secret/acme/secret-password` is the `secret_path`. The key used on the `secret_path` in Vault
-will be `pwd`.
+In `vault_secrets`, `website.db_user` is the `config_key` and `secret/mysql/customer` is the `secret_path`. The key used on the `secret_path` in Vault
+will be `db_user`.
 
 By default, the final portional of the `config key` will be used as the key to the secret within Vault. However, it is possible to add a unique key
 with a dot separator on the `secret_path`. By way of example:
 
 ```json
 {
-    "acme": {},
+    "website": {},
     "vault_secrets": {
-        "acme.pwd": "secret/acme/secret-password.password"
+        "website.db_user": "secret/mysql/customer.user"
     }     
 }
 ```
-This example is effectively the same as the first, but when accessing the `secret_path` in Vault, the key `password` will be used rather than `pwd`.
+This example takes the value named `user` from the `mysql/customer` secret and maps it onto the the `db_user` key of the `website` portion.
+This enables drawing from the same secret across different configurations without forcing all of the `config_key` names to be the same. For example,
+if a cron job also required the `user` value from `mysql/customer.user` but its configuration named it `user`, you might end up with a configuration
+file that looks like:
+
+```json
+{
+    "website": {},
+    "vault_secrets": {
+        "mailer_cron.user": "secret/mysql/customer.user"
+    }     
+}
+```
 
 ##### vault_files Usage
 
-There are two major ways to use the `vault_files` section. The first is to specify a file location directly as the key, and the secret as the path.
+**Note** Where ever possible, prefer to handle secrets as strings and use them only in memory. Only use this mode when configuring for applications
+that require the secret to be provided as a file (a common requirement for a TLS keyfile).
+
+**Note** Unlike `vault_secrets` the `vault_files` section is retained in the dictionary returned by vault_anyconfig, in order to retain the mapping
+when writing the final configuration to file (e.g. in the CLI).
+
+**Warning!** The `vault_files` functionality expects that it is being run as the user of the application, and must have appropriate permissions to
+the files and location where files are to be stored.
+
+**Warning!** `vault_files` will happily overwrite your files, and mantains no backups.
+
+**Warning!** If the file location changes, it will not be deleted! Use responsibly.
+
+There are two major ways to use the `vault_files` section. The first is to specify a file location directly, and the secret as the path.
 For example:
+
 ```json
 {
     "vault_files": {
-        "/var/acme/secret.key": "secret/acme/secret-key"
+        "/var/acme/acme.com.crt": "secret/website/proxy.key"
     }
 }
 ```
 
-The second method is to reference a key in the configuration. This way if the secret file's location is configurable, changes to its location will be
-automatically handled when writing out the file. **Warning!** If the file location changes, it will not be deleted! For example:
+The second method is to reference a key in the configuration. This avoids duplication of the file path in multiple parts of the configuration.
+
 ```json
+
 {
-    "acme": {
-        "secret-key": "/opt/server/acme.key"
+    "website": {
+        "tls-key": "/etc/web/acme.com.key",
+        "tls-cert": "/etc/web/acme.com.crt",
     },
     "vault_files": {
-        "acme.secret-key": "secret/acme/secret-key"
+        "website.tls-key": "secret/website/proxy.key",
+        "website.tls-cert": "secret/website/proxy.cert"
     }
 }
 ```
