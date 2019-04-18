@@ -79,7 +79,7 @@ def test_dump_different_file_paths_and_secrets(
     input_config = gen_input_config(vault_files={file_path: secret_path + secret_key})
 
     with patch("builtins.open", new_callable=mock_open) as mock_open_handle:
-        localhost_client.dump(input_config, "out.json")
+        localhost_client.dump(input_config, "out.json", process_secret_files=True)
         mock_open_handle.assert_called_once_with(abspath(file_path), "w")
         mock_open_handle().write.assert_called_once_with(file_contents)
 

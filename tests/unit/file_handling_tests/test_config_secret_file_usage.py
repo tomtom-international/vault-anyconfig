@@ -1,5 +1,5 @@
 from unittest.mock import patch, mock_open, call, Mock
-from pytest import fixture
+from pytest import fixture, warns
 from copy import deepcopy
 from json import dumps as jdumps
 from stat import S_IRUSR, S_IWUSR
@@ -27,11 +27,127 @@ def test_dump(
     secret_path,
 ):
     """
-    Basic test of the dump function
+    Basic test of the dump function with secret file writing
     """
     mock_hvac_client_read.return_value = gen_vault_response()
 
-    localhost_client.dump(gen_input_config(), "out.json")
+    localhost_client.dump(gen_input_config(), "out.json", process_secret_files=True)
+
+    mock_dump.assert_called_once_with(gen_input_config(), "out.json")
+
+    mock_hvac_client_read.assert_called_once_with(secret_path)
+
+    mock_open_handle.assert_called_once_with(file_path_normalized, "w")
+    mock_open_handle().write.assert_called_once_with(file_contents)
+
+    mock_chmod.assert_called_once_with(file_path_normalized, S_IRUSR)
+
+
+@patch("vault_anyconfig.vault_anyconfig.chmod")
+@patch("builtins.open", new_callable=mock_open)
+@patch("vault_anyconfig.vault_anyconfig.dumps_base")
+@patch("vault_anyconfig.vault_anyconfig.Client.read")
+def test_dumps(
+    mock_hvac_client_read,
+    mock_dumps,
+    mock_open_handle,
+    mock_chmod,
+    localhost_client,
+    gen_input_config,
+    gen_processed_config,
+    gen_vault_response,
+    file_path,
+    file_path_normalized,
+    file_contents,
+    secret_path,
+):
+    """
+    Basic test of the dumps function with secret file writing
+    """
+    mock_hvac_client_read.return_value = gen_vault_response()
+
+    localhost_client.dumps(gen_input_config(), process_secret_files=True)
+
+    mock_dumps.assert_called_once_with(gen_input_config())
+
+    mock_hvac_client_read.assert_called_once_with(secret_path)
+
+    mock_open_handle.assert_called_once_with(file_path_normalized, "w")
+    mock_open_handle().write.assert_called_once_with(file_contents)
+
+    mock_chmod.assert_called_once_with(file_path_normalized, S_IRUSR)
+
+
+@patch("vault_anyconfig.vault_anyconfig.chmod")
+@patch("builtins.open", new_callable=mock_open)
+@patch("vault_anyconfig.vault_anyconfig.load_base")
+@patch("vault_anyconfig.vault_anyconfig.Client.read")
+def test_load(
+    mock_hvac_client_read,
+    mock_load,
+    mock_open_handle,
+    mock_chmod,
+    localhost_client,
+    gen_input_config,
+    gen_processed_config,
+    gen_vault_response,
+    file_path,
+    file_path_normalized,
+    file_contents,
+    secret_path,
+):
+    """
+    Basic test of the load function with file writing
+    """
+    mock_load.return_value = gen_input_config()
+    mock_hvac_client_read.return_value = gen_vault_response()
+
+    assert (
+        localhost_client.load("in.json", process_secret_files=True)
+        == gen_processed_config()
+    )
+
+    mock_load.assert_called_once_with("in.json")
+
+    mock_hvac_client_read.assert_called_once_with(secret_path)
+
+    mock_open_handle.assert_called_once_with(file_path_normalized, "w")
+    mock_open_handle().write.assert_called_once_with(file_contents)
+
+    mock_chmod.assert_called_once_with(file_path_normalized, S_IRUSR)
+
+
+@patch("vault_anyconfig.vault_anyconfig.chmod")
+@patch("builtins.open", new_callable=mock_open)
+@patch("vault_anyconfig.vault_anyconfig.loads_base")
+@patch("vault_anyconfig.vault_anyconfig.Client.read")
+def test_loads(
+    mock_hvac_client_read,
+    mock_loads,
+    mock_open_handle,
+    mock_chmod,
+    localhost_client,
+    gen_input_config,
+    gen_processed_config,
+    gen_vault_response,
+    file_path,
+    file_path_normalized,
+    file_contents,
+    secret_path,
+):
+    """
+    Basic test of the loads function with file writing
+    """
+    mock_loads.return_value = gen_input_config()
+    mock_hvac_client_read.return_value = gen_vault_response()
+    input_config_json = jdumps(gen_input_config())
+
+    assert (
+        localhost_client.loads(input_config_json, process_secret_files=True)
+        == gen_processed_config()
+    )
+
+    mock_loads.assert_called_once_with(jdumps(gen_input_config()))
 
     mock_hvac_client_read.assert_called_once_with(secret_path)
 
@@ -67,7 +183,7 @@ def test_dump_config_file_reference(
 
     mock_hvac_client_read.return_value = gen_vault_response()
 
-    localhost_client.dump(input_config, "out.json")
+    localhost_client.dump(input_config, "out.json", process_secret_files=True)
 
     mock_hvac_client_read.assert_called_once_with(secret_path)
 
@@ -150,3 +266,34 @@ def test_loads_disable_vault_files(
     mock_hvac_client_read.assert_not_called()
     mock_loads.assert_called_with(string_raw_config)
 
+
+@patch("vault_anyconfig.vault_anyconfig.chmod")
+@patch("builtins.open", new_callable=mock_open)
+@patch("vault_anyconfig.vault_anyconfig.dump_base")
+@patch("vault_anyconfig.vault_anyconfig.Client.read")
+def test_dump_passthrough(
+    mock_hvac_client_read,
+    mock_dump,
+    mock_open_handle,
+    mock_chmod,
+    localhost_client,
+    gen_input_config,
+    gen_processed_config,
+    gen_vault_response,
+    file_path,
+    file_path_normalized,
+    file_contents,
+    secret_path,
+):
+    """
+    Tests a warning is thrown where there are files specified but the passthrough flag is set.
+    """
+    mock_hvac_client_read.return_value = gen_vault_response()
+
+    with warns(UserWarning):
+        VaultAnyConfig().dump(gen_input_config(), "out.json", process_secret_files=True)
+
+    mock_dump.assert_called_once_with(gen_input_config(), "out.json")
+    mock_hvac_client_read.assert_not_called()
+    mock_open_handle.assert_not_called()
+    mock_chmod.assert_not_called()

@@ -75,7 +75,7 @@ class VaultAnyConfig(Client):
         method(**creds)
         return self.is_authenticated()
 
-    def dump(self, data, out, process_secret_files=True, **args):
+    def dump(self, data, out, process_secret_files=False, **args):
         """
         First updates the provided dictionary with keys from the Vault, then calls anyconfig to dump out a configuration file.
         See https://python-anyconfig.readthedocs.io/en/latest/api/anyconfig.api.html#anyconfig.api.dump for detailed invocation options.
@@ -91,7 +91,7 @@ class VaultAnyConfig(Client):
 
         dump_base(updated_data, out, **args)
 
-    def dumps(self, data, process_secret_files=True, **args):
+    def dumps(self, data, process_secret_files=False, **args):
         """
         First updates the provided dictionary with keys from the Vault, then calls anyconfig to dump out string
         See https://python-anyconfig.readthedocs.io/en/latest/api/anyconfig.api.html#anyconfig.api.dump for detailed invocation options.
@@ -108,7 +108,7 @@ class VaultAnyConfig(Client):
 
         return dumps_base(updated_data, **args)
 
-    def load(self, path_spec, process_secret_files=True, **args):
+    def load(self, path_spec, process_secret_files=False, **args):
         """
         Calls anyconfig to load the configuration file, then loads any keys specified in the configuration file from Vault
         See https://python-anyconfig.readthedocs.io/en/latest/api/anyconfig.api.html#anyconfig.api.load for detailed invocation options.
@@ -125,7 +125,7 @@ class VaultAnyConfig(Client):
 
         return self.__process_vault_keys(config)
 
-    def loads(self, content, process_secret_files=True, **args):
+    def loads(self, content, process_secret_files=False, **args):
         """
         Calls anyconfig to load the string into a dictionary, then loads any keys specified in the configuration from Vault
         See https://python-anyconfig.readthedocs.io/en/latest/api/anyconfig.api.html#anyconfig.api.loads for detailed invocation options.
