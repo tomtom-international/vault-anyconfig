@@ -176,7 +176,6 @@ For example:
 The second method is to reference a key in the configuration. This avoids duplication of the file path in multiple parts of the configuration.
 
 ```json
-
 {
     "website": {
         "tls-key": "/etc/web/acme.com.key",
