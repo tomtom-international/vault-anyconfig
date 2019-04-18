@@ -229,7 +229,7 @@ def test_no_vault_secrets(mock_load, localhost_client, gen_input_config):
 @patch("vault_anyconfig.vault_anyconfig.load_base")
 def test_load_no_vault_with_secrets(mock_load, gen_input_config):
     """
-    Basic test of the load function
+    Basic test of the load function when no secrets are set
     """
     mock_load.return_value = gen_input_config()
 
