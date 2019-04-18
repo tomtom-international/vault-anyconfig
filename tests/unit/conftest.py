@@ -1,5 +1,5 @@
 """
-Base class for test classes to inherit from, provides a preconfigured mock Vault client
+Pytest configuration including fixtures
 """
 from unittest.mock import patch
 from pytest import fixture
@@ -14,4 +14,3 @@ def localhost_client(mock_hvac_client):
     Configures a mock instance of the HVAC client
     """
     return VaultAnyConfig(url="http://localhost")
-

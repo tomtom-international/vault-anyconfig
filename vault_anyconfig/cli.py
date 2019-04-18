@@ -33,6 +33,13 @@ def parse_args(args):
     parser.add_argument(
         "--vault_creds", type=str, required=True, help="Vault credentials file"
     )
+    parser.add_argument(
+        "--secret_files_write",
+        type=bool,
+        action="store_true",
+        default=False,
+        help="Use to pull and write to disk anything in the vault_files section",
+    )
     return parser.parse_args(args)
 
 
@@ -45,9 +52,18 @@ def main():
     client = VaultAnyConfig(vault_config_file=args.vault_config)
     client.auth_from_file(args.vault_creds)
 
-    config = client.load(args.in_file, ac_parser=args.file_type)
+    config = client.load(
+        args.in_file,
+        process_secret_files=args.secret_files_write,
+        ac_parser=args.file_type,
+    )
 
-    client.dump(config, args.out_file, ac_parser=args.file_type)
+    client.dump(
+        config,
+        args.out_file,
+        process_secret_files=args.secret_files_write,
+        ac_parser=args.file_type,
+    )
 
 
 if __name__ == "__main__":

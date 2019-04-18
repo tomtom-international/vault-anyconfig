@@ -23,7 +23,7 @@ requirements = ["anyconfig==0.9.8", "hvac==0.7.2"]
 
 setup_requirements = ["pytest-runner"]
 
-test_requirements = ["pytest", "pytest-cov", "coverage"]
+test_requirements = ["pytest", "pytest-cov", "coverage", "hypothesis"]
 
 setup(
     author=vault_anyconfig.__author__,
