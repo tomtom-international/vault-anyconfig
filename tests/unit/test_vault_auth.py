@@ -45,9 +45,9 @@ def test_auth_from_file(
     Basic test for the auth_from_file function
     """
     mock_load.return_value = gen_vault_creds()
-    mock_is_authenticated.return_value = True
+    mock_is_authenticated.return_value = False
 
-    assert localhost_client.auth_from_file("config.json")
+    localhost_client.auth_from_file("config.json")
 
     compare_vault_creds = gen_vault_creds()
 
@@ -70,7 +70,7 @@ def test_auth_from_file_bad_method(
     local_vault_creds = gen_vault_creds()
     local_vault_creds["vault_creds"]["auth_method"] = "nothing"
     mock_load.return_value = local_vault_creds
-    mock_is_authenticated.return_value = True
+    mock_is_authenticated.return_value = False
 
     with pytest.raises(NotImplementedError):
         localhost_client.auth_from_file("config.json")

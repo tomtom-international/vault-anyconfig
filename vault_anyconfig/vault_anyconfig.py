@@ -56,7 +56,7 @@ class VaultAnyConfig(Client):
         Returns:
             bool of authenication status
         """
-        if self.pass_through_flag:
+        if self.pass_through_flag or self.is_authenticated():
             return True
 
         creds = load_base(vault_creds_file)["vault_creds"]
@@ -223,7 +223,8 @@ class VaultAnyConfig(Client):
                 secret_key = config_key_path[-1]
 
             read_vault_secret = self.read(secret_path)["data"][secret_key]
-            config_part = self.__get_nested_config(config_key_path, read_vault_secret)
+            config_part = self.__get_nested_config(
+                config_key_path, read_vault_secret)
             merge(vault_config_parts, config_part)
 
         return vault_config_parts
@@ -276,7 +277,8 @@ class VaultAnyConfig(Client):
         if len(path_list) == 1:
             config_part[path_list[0]] = value
         else:
-            config_part[path_list[0]] = self.__get_nested_config(path_list[1:], value)
+            config_part[path_list[0]] = self.__get_nested_config(
+                path_list[1:], value)
         return config_part
 
     def __get_value_nested_config(self, path_list, config):
