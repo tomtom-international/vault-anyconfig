@@ -51,6 +51,11 @@ class VaultAnyConfig(Client):
         The Vault credentials must be within a dictionary named "vault_creds" and each element's name must match the names of the parameters of the
         desired auth function. It must also contain a "auth_method" member that matches one of the authentication methods in HVAC
 
+        Special cases:
+            - kubernetes: Kubernetes authentication can optionally provide a token_path field in the credentials file rather than directly providing
+                the JWT. Typically this path should be `/var/run/secrets/kubernetes.io/serviceaccount` See
+                https://kubernetes.io/docs/reference/access-authn-authz/service-accounts-admin/#service-account-admission-controller
+
         Args:
             - vault_creds_file: file containing the credentials for the Vault
         Returns:
@@ -62,6 +67,13 @@ class VaultAnyConfig(Client):
         creds = load_base(vault_creds_file)["vault_creds"]
         auth_method = "auth_" + creds["auth_method"]
         creds.pop("auth_method", None)
+
+        # Special cases
+        if auth_method == "auth_kubernetes":
+            token_path = creds.pop("token_path", None)
+            if token_path:
+                with open(token_path, "r") as token_file:
+                    creds['jwt'] = token_file.read()
 
         try:
             method = getattr(self, auth_method)
@@ -223,7 +235,8 @@ class VaultAnyConfig(Client):
                 secret_key = config_key_path[-1]
 
             read_vault_secret = self.read(secret_path)["data"][secret_key]
-            config_part = self.__get_nested_config(config_key_path, read_vault_secret)
+            config_part = self.__get_nested_config(
+                config_key_path, read_vault_secret)
             merge(vault_config_parts, config_part)
 
         return vault_config_parts
@@ -276,7 +289,8 @@ class VaultAnyConfig(Client):
         if len(path_list) == 1:
             config_part[path_list[0]] = value
         else:
-            config_part[path_list[0]] = self.__get_nested_config(path_list[1:], value)
+            config_part[path_list[0]] = self.__get_nested_config(
+                path_list[1:], value)
         return config_part
 
     def __get_value_nested_config(self, path_list, config):
