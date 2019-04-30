@@ -51,6 +51,11 @@ class VaultAnyConfig(Client):
         The Vault credentials must be within a dictionary named "vault_creds" and each element's name must match the names of the parameters of the
         desired auth function. It must also contain a "auth_method" member that matches one of the authentication methods in HVAC
 
+        Special cases:
+            - kubernetes: Kubernetes authentication can optionally provide a token_path field in the credentials file rather than directly providing
+                the JWT. Typically this path should be `/var/run/secrets/kubernetes.io/serviceaccount` See
+                https://kubernetes.io/docs/reference/access-authn-authz/service-accounts-admin/#service-account-admission-controller
+
         Args:
             - vault_creds_file: file containing the credentials for the Vault
         Returns:
@@ -62,6 +67,13 @@ class VaultAnyConfig(Client):
         creds = load_base(vault_creds_file)["vault_creds"]
         auth_method = "auth_" + creds["auth_method"]
         creds.pop("auth_method", None)
+
+        # Special cases
+        if auth_method == "auth_kubernetes":
+            token_path = creds.pop("token_path", None)
+            if token_path:
+                with open(token_path, "r") as token_file:
+                    creds['jwt'] = token_file.read()
 
         try:
             method = getattr(self, auth_method)
