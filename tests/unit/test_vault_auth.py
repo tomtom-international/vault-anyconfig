@@ -78,6 +78,59 @@ def test_auth_from_file_bad_method(
     mock_load.assert_called_with("config.json")
 
 
+@patch("vault_anyconfig.vault_anyconfig.Client.auth_kubernetes")
+@patch("vault_anyconfig.vault_anyconfig.Client.is_authenticated")
+@patch("vault_anyconfig.vault_anyconfig.load_base")
+def test_auth_from_file_k8s_method(
+    mock_load, mock_is_authenticated, mock_auth_kubernetes, localhost_client, gen_vault_creds
+):
+    """
+    Test that the kubernetes method *without* the token path configured is called directly
+    """
+    local_vault_creds = {
+        "vault_creds": {
+            "auth_method": "kubernetes",
+            "role": "test_role",
+            "jwt": "jwt_string"
+        }
+    }
+    mock_load.return_value = local_vault_creds
+    mock_is_authenticated.return_value = False
+
+    localhost_client.auth_from_file("config.json")
+
+    mock_load.assert_called_with("config.json")
+    mock_auth_kubernetes.assert_called_with(role="test_role", jwt="jwt_string")
+
+
+@patch("vault_anyconfig.vault_anyconfig.Client.auth_kubernetes")
+@patch("vault_anyconfig.vault_anyconfig.Client.is_authenticated")
+@patch("vault_anyconfig.vault_anyconfig.load_base")
+def test_auth_from_file_k8s_method_token_path(
+    mock_load, mock_is_authenticated, mock_auth_kubernetes, localhost_client, gen_vault_creds
+):
+    """
+    Test that the kubernetes method *with* the token path configured is called with the value from the token file
+    """
+    local_vault_creds = {
+        "vault_creds": {
+            "auth_method": "kubernetes",
+            "role": "test_role",
+            "token_path": "/var/run/secrets/kubernetes.io/serviceaccount"
+        }
+    }
+    mock_load.return_value = local_vault_creds
+    mock_is_authenticated.return_value = False
+
+    with patch("builtins.open", mock_open(read_data="jwt_string")) as mock_open_handle:
+        localhost_client.auth_from_file("config.json")
+        mock_open_handle.assert_called_once_with(
+            "/var/run/secrets/kubernetes.io/serviceaccount", "r")
+
+    mock_load.assert_called_with("config.json")
+    mock_auth_kubernetes.assert_called_with(role="test_role", jwt="jwt_string")
+
+
 def test_auth_with_passthrough():
     """
     Tests that the auth_from_file will simply be bypassed when using an instance with passthrough
