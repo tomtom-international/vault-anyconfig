@@ -137,3 +137,25 @@ def test_auth_with_passthrough():
     """
     client = VaultAnyConfig()
     assert client.auth_from_file("config.json")
+
+
+@patch("vault_anyconfig.vault_anyconfig.load_base")
+@patch("vault_anyconfig.vault_anyconfig.Client.is_authenticated")
+def test_auth_with_already_authenticated(mock_is_authenticated, mock_load, gen_vault_creds, localhost_client):
+    """
+    Tests that the auth_from_file will simply be bypassed when the client is already authenticated
+    """
+    mock_load.return_value = gen_vault_creds()
+    mock_is_authenticated.return_value = True
+
+    assert localhost_client.auth_from_file("config.json")
+
+
+@patch("vault_anyconfig.vault_anyconfig.Client.is_authenticated")
+def test_auth_with_already_authenticated_and_passthrough(mock_is_authenticated):
+    """
+    Tests that the auth_from_file will simply be bypassed when using an instance with passthrough set and the client is already authenticated
+    """
+    mock_is_authenticated.return_value = True
+    client = VaultAnyConfig()
+    assert client.auth_from_file("config.json")
