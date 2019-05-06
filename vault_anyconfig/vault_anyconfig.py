@@ -61,7 +61,7 @@ class VaultAnyConfig(Client):
         Returns:
             bool of authenication status
         """
-        if self.pass_through_flag:
+        if self.pass_through_flag or self.is_authenticated():
             return True
 
         creds = load_base(vault_creds_file)["vault_creds"]
