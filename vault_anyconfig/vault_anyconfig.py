@@ -163,7 +163,13 @@ class VaultAnyConfig(Client):
             - secret_path: secret's path in Vault
             - secret_key: key in the secret in Vault to access
         """
-        secret_file_string = self.read(secret_path)["data"][secret_key]
+        if isinstance(secret_key, list):
+            secret_file_string = self.read(secret_path)["data"]
+            for key in secret_key:
+                secret_file_string = secret_file_string[key]
+        else:
+            secret_file_string = self.read(secret_path)["data"][secret_key]
+
         real_file_path = abspath(file_path)
         if isfile(file_path):
             try:
@@ -224,17 +230,22 @@ class VaultAnyConfig(Client):
 
         for secret, path in config.get("vault_secrets", {}).items():
             config_key_path = secret.split(".")
-            secret_path = path
-
-            # Optionally map the key in the configuration to a different key in the Vault
-            secret_path_split = secret_path.split(".")
-            if len(secret_path_split) > 1:
-                secret_path = "".join(secret_path_split[:-1])
-                secret_key = secret_path_split[-1]
+            if isinstance(path, list):
+                secret_path = path[0]
+                read_vault_secret = self.read(secret_path)["data"]
+                for key in path[1:]:
+                    read_vault_secret = read_vault_secret[key]
             else:
-                secret_key = config_key_path[-1]
+                secret_path = path
+                # Optionally map the key in the configuration to a different key in the Vault
+                secret_path_split = secret_path.split(".")
+                if len(secret_path_split) > 1:
+                    secret_path = "".join(secret_path_split[:-1])
+                    secret_key = secret_path_split[-1]
+                else:
+                    secret_key = config_key_path[-1]
+                read_vault_secret = self.read(secret_path)["data"][secret_key]
 
-            read_vault_secret = self.read(secret_path)["data"][secret_key]
             config_part = self.__get_nested_config(
                 config_key_path, read_vault_secret)
             merge(vault_config_parts, config_part)
@@ -263,13 +274,17 @@ class VaultAnyConfig(Client):
             if not real_file_path:
                 real_file_path = file_path
 
-            secret_split = secret.split(".")
-            if len(secret_split) > 1 and secret[-1] != "." and secret[0] != ".":
-                secret_path = ".".join(secret_split[0:-1])
-                secret_key = secret_split[-1]
+            if isinstance(secret, list):
+                secret_path = secret[0]
+                secret_key = secret[1:]
             else:
-                secret_path = secret
-                secret_key = "file"
+                secret_split = secret.split(".")
+                if len(secret_split) > 1 and secret[-1] != "." and secret[0] != ".":
+                    secret_path = ".".join(secret_split[0:-1])
+                    secret_key = secret_split[-1]
+                else:
+                    secret_path = secret
+                    secret_key = "file"
             self.save_file_from_vault(real_file_path, secret_path, secret_key)
 
         return
