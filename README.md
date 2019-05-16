@@ -15,6 +15,12 @@ Extends the [HVAC Hashicorp Vault Client](https://github.com/hvac/hvac) with the
 [anyconfig](https://github.com/ssato/python-anyconfig). This allows automatic mixing in of secrets from Vault, allowing you to store a configuration
 file with all details populated save for secrets, and then access Hashicorp Vault to load the secrets into the in-memory dictionary.
 
+## Supported Secret Engines
+
+Currently vault-anyconfig **only** supports version 1 and 2 of the key value store.
+Additionally, in key value store version 2, it only uses the latest version of the secret, and there is no intention at the moment to handle older
+secret versions due to the extra complexity this would introduce in the file format.
+
 ## Files and Formatting
 
 There are three configuration files, which can be stored in one, two or three files total as long as they are correctly written.
