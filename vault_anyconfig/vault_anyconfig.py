@@ -168,7 +168,7 @@ class VaultAnyConfig(Client):
             - secret_key: key in the secret in Vault to access
         """
         secret_file_string = self.__process_response(
-            self.read(secret_path)["data"], secret_key)
+            self.read(secret_path), secret_key)
 
         real_file_path = abspath(file_path)
         if isfile(file_path):
@@ -241,7 +241,7 @@ class VaultAnyConfig(Client):
                 secret_key = config_key_path[-1]
 
             read_vault_secret = self.__process_response(
-                self.read(secret_path)["data"], secret_key)
+                self.read(secret_path), secret_key)
 
             config_part = self.__get_nested_config(
                 config_key_path, read_vault_secret)
@@ -294,9 +294,12 @@ class VaultAnyConfig(Client):
             secret string
         """
         if cls.__is_key_value_v1(read_response, secret_key):
-            return read_response[secret_key]
-        elif cls.__is_key_value_v2(read_response, secret_key):
             return read_response['data'][secret_key]
+        elif cls.__is_key_value_v2(read_response, secret_key):
+            return read_response['data']['data'][secret_key]
+        else:
+            raise RuntimeError(
+                "Invalid response recieved. Possibly due to an unsupported secrets engine, vault-anyconfig currently only supports kv1 and kv2.")
 
     @staticmethod
     def __is_key_value_v1(read_response, secret_key):
@@ -309,7 +312,7 @@ class VaultAnyConfig(Client):
         Returns:
             Bool
         """
-        if secret_key in read_response:
+        if secret_key in read_response.get('data', {}):
             return True
         return False
 
@@ -324,7 +327,7 @@ class VaultAnyConfig(Client):
         Returns:
             Bool
         """
-        if secret_key in read_response['data']:
+        if secret_key in read_response.get('data', {}).get('data', {}):
             return True
         return False
 
