@@ -18,8 +18,11 @@ file with all details populated save for secrets, and then access Hashicorp Vaul
 ## Supported Secret Engines
 
 Currently vault-anyconfig **only** supports version 1 and 2 of the key value store.
-Additionally, in key value store version 2, it only uses the latest version of the secret, and there is no intention at the moment to handle older
-secret versions due to the extra complexity this would introduce in the file format.
+
+### kv2 Limitations
+
+* vault-anyconfig **only** will read the latest version of a secret to maintain simplicity in the configuration file
+* you must add `data` after the mointpoint for a kv2 secret, e.g. `secret/data/example-secret` due to limitations in the HVAC client
 
 ## Files and Formatting
 
@@ -153,6 +156,9 @@ file that looks like:
 }
 ```
 
+**Key-Value Store V2 Limitation**: You must include `data` after the mountpoint, for example, `secret/mysql/customer` should be
+`secret/data/mysql/customer` when using V2.
+
 ##### vault_files Usage
 
 **Note** Where ever possible, prefer to handle secrets as strings and use them only in memory. Only use this mode when configuring for applications
@@ -198,6 +204,10 @@ By default, `secret_path` uses `file` as the key within the Vault secret. Howeve
 
 **Warning!** The `secret_path` string can only use a dot (`.`) if separating the path from the key. Extra dots will cause vault_anyconfig to throw an
 error.
+
+**Key-Value Store V2 Limitation**: You must include `data` after the mountpoint, for example, `secret/website/proxy` should be
+`secret/data/website/proxy` when using V2.
+
 
 ### Guidance for Configuration Files
 
