@@ -165,7 +165,7 @@ class VaultAnyConfig(Client):
         """
         # Handle v1 vs v2 of the key-value secret store, a version isn't returned in the response so check the shape of the data
         # v1: https://www.vaultproject.io/api/secret/kv/kv-v1.html#sample-response-1
-        # v2: https://www.vaultproject.io/api/secret/kv/kv-v2.html
+        # v2: https://www.vaultproject.io/api/secret/kv/kv-v2.html#sample-response-1
         raw_secret_response = self.read(secret_path)["data"]
         if secret_key in raw_secret_response:
             secret_file_string = raw_secret_response[secret_key]
@@ -244,7 +244,7 @@ class VaultAnyConfig(Client):
 
             # Handle v1 vs v2 of the key-value secret store, a version isn't returned in the response so check the shape of the data
             # v1: https://www.vaultproject.io/api/secret/kv/kv-v1.html#sample-response-1
-            # v2: https://www.vaultproject.io/api/secret/kv/kv-v2.html
+            # v2: https://www.vaultproject.io/api/secret/kv/kv-v2.html#sample-response-1
             raw_secret_response = self.read(secret_path)["data"]
             if secret_key in raw_secret_response:
                 read_vault_secret = raw_secret_response[secret_key]
