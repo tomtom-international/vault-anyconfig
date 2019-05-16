@@ -90,8 +90,7 @@ class VaultAnyConfig(Client):
     def dump(self, data, out, process_secret_files=False, **args):
         """
         First updates the provided dictionary with keys from the Vault, then calls anyconfig to dump out a configuration file.
-        #anyconfig.api.dump for detailed invocation options.
-        See https://python-anyconfig.readthedocs.io/en/latest/api/anyconfig.api.html
+        See https://python-anyconfig.readthedocs.io/en/latest/api/anyconfig.api.html#anyconfig.api.dump for detailed invocation options.
 
         Args:
             data: configuration dict
@@ -107,8 +106,7 @@ class VaultAnyConfig(Client):
     def dumps(self, data, process_secret_files=False, **args):
         """
         First updates the provided dictionary with keys from the Vault, then calls anyconfig to dump out string
-        #anyconfig.api.dump for detailed invocation options.
-        See https://python-anyconfig.readthedocs.io/en/latest/api/anyconfig.api.html
+        See https://python-anyconfig.readthedocs.io/en/latest/api/anyconfig.api.html#anyconfig.api.dump for detailed invocation options.
 
         Args:
             data: configuration dict
@@ -125,8 +123,7 @@ class VaultAnyConfig(Client):
     def load(self, path_spec, process_secret_files=False, **args):
         """
         Calls anyconfig to load the configuration file, then loads any keys specified in the configuration file from Vault
-        #anyconfig.api.load for detailed invocation options.
-        See https://python-anyconfig.readthedocs.io/en/latest/api/anyconfig.api.html
+        See https://python-anyconfig.readthedocs.io/en/latest/api/anyconfig.api.html#anyconfig.api.load for detailed invocation options.
 
         Args:
             path_spec: file(s) containing configuration info to parse
@@ -143,8 +140,7 @@ class VaultAnyConfig(Client):
     def loads(self, content, process_secret_files=False, **args):
         """
         Calls anyconfig to load the string into a dictionary, then loads any keys specified in the configuration from Vault
-        #anyconfig.api.loads for detailed invocation options.
-        See https://python-anyconfig.readthedocs.io/en/latest/api/anyconfig.api.html
+        See https://python-anyconfig.readthedocs.io/en/latest/api/anyconfig.api.html#anyconfig.api.loads for detailed invocation options.
 
         Args:
             content: string containing configuration info to parse
