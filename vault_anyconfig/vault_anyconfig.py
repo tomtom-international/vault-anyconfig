@@ -90,7 +90,8 @@ class VaultAnyConfig(Client):
     def dump(self, data, out, process_secret_files=False, **args):
         """
         First updates the provided dictionary with keys from the Vault, then calls anyconfig to dump out a configuration file.
-        See https://python-anyconfig.readthedocs.io/en/latest/api/anyconfig.api.html#anyconfig.api.dump for detailed invocation options.
+        #anyconfig.api.dump for detailed invocation options.
+        See https://python-anyconfig.readthedocs.io/en/latest/api/anyconfig.api.html
 
         Args:
             data: configuration dict
@@ -106,7 +107,8 @@ class VaultAnyConfig(Client):
     def dumps(self, data, process_secret_files=False, **args):
         """
         First updates the provided dictionary with keys from the Vault, then calls anyconfig to dump out string
-        See https://python-anyconfig.readthedocs.io/en/latest/api/anyconfig.api.html#anyconfig.api.dump for detailed invocation options.
+        #anyconfig.api.dump for detailed invocation options.
+        See https://python-anyconfig.readthedocs.io/en/latest/api/anyconfig.api.html
 
         Args:
             data: configuration dict
@@ -123,7 +125,8 @@ class VaultAnyConfig(Client):
     def load(self, path_spec, process_secret_files=False, **args):
         """
         Calls anyconfig to load the configuration file, then loads any keys specified in the configuration file from Vault
-        See https://python-anyconfig.readthedocs.io/en/latest/api/anyconfig.api.html#anyconfig.api.load for detailed invocation options.
+        #anyconfig.api.load for detailed invocation options.
+        See https://python-anyconfig.readthedocs.io/en/latest/api/anyconfig.api.html
 
         Args:
             path_spec: file(s) containing configuration info to parse
@@ -140,7 +143,8 @@ class VaultAnyConfig(Client):
     def loads(self, content, process_secret_files=False, **args):
         """
         Calls anyconfig to load the string into a dictionary, then loads any keys specified in the configuration from Vault
-        See https://python-anyconfig.readthedocs.io/en/latest/api/anyconfig.api.html#anyconfig.api.loads for detailed invocation options.
+        #anyconfig.api.loads for detailed invocation options.
+        See https://python-anyconfig.readthedocs.io/en/latest/api/anyconfig.api.html
 
         Args:
             content: string containing configuration info to parse
@@ -163,14 +167,8 @@ class VaultAnyConfig(Client):
             - secret_path: secret's path in Vault
             - secret_key: key in the secret in Vault to access
         """
-        # Handle v1 vs v2 of the key-value secret store, a version isn't returned in the response so check the shape of the data
-        # v1: https://www.vaultproject.io/api/secret/kv/kv-v1.html#sample-response-1
-        # v2: https://www.vaultproject.io/api/secret/kv/kv-v2.html#sample-response-1
-        raw_secret_response = self.read(secret_path)["data"]
-        if secret_key in raw_secret_response:
-            secret_file_string = raw_secret_response[secret_key]
-        else:
-            secret_file_string = raw_secret_response['data'][secret_key]
+        secret_file_string = self.__process_response(
+            self.read(secret_path)["data"], secret_key)
 
         real_file_path = abspath(file_path)
         if isfile(file_path):
@@ -242,14 +240,8 @@ class VaultAnyConfig(Client):
             else:
                 secret_key = config_key_path[-1]
 
-            # Handle v1 vs v2 of the key-value secret store, a version isn't returned in the response so check the shape of the data
-            # v1: https://www.vaultproject.io/api/secret/kv/kv-v1.html#sample-response-1
-            # v2: https://www.vaultproject.io/api/secret/kv/kv-v2.html#sample-response-1
-            raw_secret_response = self.read(secret_path)["data"]
-            if secret_key in raw_secret_response:
-                read_vault_secret = raw_secret_response[secret_key]
-            else:
-                read_vault_secret = raw_secret_response['data'][secret_key]
+            read_vault_secret = self.__process_response(
+                self.read(secret_path)["data"], secret_key)
 
             config_part = self.__get_nested_config(
                 config_key_path, read_vault_secret)
@@ -289,6 +281,52 @@ class VaultAnyConfig(Client):
             self.save_file_from_vault(real_file_path, secret_path, secret_key)
 
         return
+
+    @classmethod
+    def __process_response(cls, read_response, secret_key):
+        """
+        Detects the secret engine returning a secret (currently *only* supports key-value versions 1 and 2) and returns the requested key from the
+        secret.
+        Args:
+            - read_response: repsonse from HVAC read function
+            - secret_key: secret key being retrieved
+        Returns:
+            secret string
+        """
+        if cls.__is_key_value_v1(read_response, secret_key):
+            return read_response[secret_key]
+        elif cls.__is_key_value_v2(read_response, secret_key):
+            return read_response['data'][secret_key]
+
+    @staticmethod
+    def __is_key_value_v1(read_response, secret_key):
+        """
+        Checks if the response is from the key value v1 secret engine.
+        See https://www.vaultproject.io/api/secret/kv/kv-v1.html#sample-response-1
+        Args:
+            - read_response: repsonse from HVAC read function
+            - secret_key: secret key being retrieved
+        Returns:
+            Bool
+        """
+        if secret_key in read_response:
+            return True
+        return False
+
+    @staticmethod
+    def __is_key_value_v2(read_response, secret_key):
+        """
+        Checks if the response is from the key value v1 secret engine
+        See https://www.vaultproject.io/api/secret/kv/kv-v2.html#sample-response-1
+        Args:
+            - read_response: repsonse from HVAC read function
+            - secret_key: secret key being retrieved
+        Returns:
+            Bool
+        """
+        if secret_key in read_response['data']:
+            return True
+        return False
 
     def __get_nested_config(self, path_list, value):
         """
