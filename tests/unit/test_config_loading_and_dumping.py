@@ -72,6 +72,29 @@ def gen_vault_response_kv1(gen_processed_config):
     return _gen_vault_repsonse
 
 
+@pytest.fixture
+def gen_vault_response_kv2(gen_processed_config):
+    """
+    Provides the vault response for a given processed configuration file
+    """
+
+    def _gen_vault_repsonse(
+        processed_config=gen_processed_config(), user_key="user", pwd_key="pwd"
+    ):
+        vault_response = {
+            "data": {
+                "data": {
+                    user_key: processed_config["acme"]["user"],
+                    pwd_key: processed_config["acme"]["pwd"],
+                },
+                "metadata": {}
+            }
+        }
+        return vault_response
+
+    return _gen_vault_repsonse
+
+
 @patch("vault_anyconfig.vault_anyconfig.dump_base")
 @patch("vault_anyconfig.vault_anyconfig.Client.read")
 def test_dump(
@@ -148,6 +171,55 @@ def test_load(
 
 @patch("vault_anyconfig.vault_anyconfig.load_base")
 @patch("vault_anyconfig.vault_anyconfig.Client.read")
+def test_load_invalid_response(
+    mock_hvac_client_read,
+    mock_load,
+    localhost_client,
+    gen_input_config,
+    gen_processed_config,
+    gen_vault_response_kv2,
+):
+    """
+    Basic test of the load function with invalid vault response
+    """
+    mock_hvac_client_read.return_value = {"invalid_data": {}}
+    mock_load.return_value = gen_input_config()
+
+    with pytest.raises(RuntimeError):
+        localhost_client.load("in.json")
+
+    mock_hvac_client_read.assert_called_with(
+        gen_input_config()["vault_secrets"]["acme.user"]
+    )
+    mock_load.assert_called_with("in.json")
+
+
+@patch("vault_anyconfig.vault_anyconfig.load_base")
+@patch("vault_anyconfig.vault_anyconfig.Client.read")
+def test_load_kv2(
+    mock_hvac_client_read,
+    mock_load,
+    localhost_client,
+    gen_input_config,
+    gen_processed_config,
+    gen_vault_response_kv2,
+):
+    """
+    Basic test of the load function
+    """
+    mock_hvac_client_read.return_value = gen_vault_response_kv2()
+    mock_load.return_value = gen_input_config()
+
+    assert localhost_client.load("in.json") == gen_processed_config()
+
+    mock_hvac_client_read.assert_called_with(
+        gen_input_config()["vault_secrets"]["acme.user"]
+    )
+    mock_load.assert_called_with("in.json")
+
+
+@patch("vault_anyconfig.vault_anyconfig.load_base")
+@patch("vault_anyconfig.vault_anyconfig.Client.read")
 def test_load_different_vault_key(
     mock_hvac_client_read,
     mock_load,
@@ -209,7 +281,7 @@ def test_empty_path_list(
     mock_load.return_value = gen_input_config(
         vault_secrets={"": "some_secret"})
 
-    with pytest.raises(KeyError):
+    with pytest.raises(RuntimeError):
         localhost_client.load("in.json")
 
     mock_hvac_client_read.assert_called_with("some_secret")
