@@ -35,9 +35,7 @@ def parse_args(args):
     )
     parser.add_argument(
         "--secret_files_write",
-        type=bool,
-        action="store_true",
-        default=False,
+        action="store_false",
         help="Use to pull and write to disk anything in the vault_files section",
     )
     return parser.parse_args(args)
