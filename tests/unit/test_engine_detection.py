@@ -32,6 +32,6 @@ def test_detect_kv_v2(contents, secret_key, gen_vault_response_kv1, gen_vault_re
     read_response_v2 = gen_vault_response_kv2(contents, secret_key)
 
     assert VaultAnyConfig._VaultAnyConfig__is_key_value_v2(
-        read_response_v2, secret_key)
+        read_response_v2)
     assert not VaultAnyConfig._VaultAnyConfig__is_key_value_v2(
-        read_response_v1, secret_key)
+        read_response_v1)

@@ -291,7 +291,7 @@ class VaultAnyConfig(Client):
         """
         if cls.__is_key_value_v1(read_response, secret_key):
             secret_string = read_response['data'][secret_key]
-        elif cls.__is_key_value_v2(read_response, secret_key):
+        elif cls.__is_key_value_v2(read_response):
             secret_string = read_response['data']['data'][secret_key]
         else:
             raise RuntimeError(
@@ -305,24 +305,22 @@ class VaultAnyConfig(Client):
         See https://www.vaultproject.io/api/secret/kv/kv-v1.html#sample-response-1
         Args:
             - read_response: response from HVAC read function
-            - secret_key: secret key being retrieved
         Returns:
             Bool
         """
-        return secret_key in read_response.get('data', {}) and 'metadata' not in read_response.get('data', {})
+        return isinstance(read_response.get('data', {}).get(secret_key, {}), str)
 
     @staticmethod
-    def __is_key_value_v2(read_response, secret_key):
+    def __is_key_value_v2(read_response):
         """
         Checks if the response is from the key value v2 secret engine
         See https://www.vaultproject.io/api/secret/kv/kv-v2.html#sample-response-1
         Args:
             - read_response: response from HVAC read function
-            - secret_key: secret key being retrieved
         Returns:
             Bool
         """
-        return secret_key in read_response.get('data', {}).get('data', {}) and 'metadata' in read_response.get('data', {})
+        return isinstance(read_response.get('data', {}).get('data', ''), dict)
 
     def __get_nested_config(self, path_list, value):
         """
