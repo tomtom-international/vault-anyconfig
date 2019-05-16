@@ -309,7 +309,7 @@ class VaultAnyConfig(Client):
         Returns:
             Bool
         """
-        return secret_key in read_response.get('data', {})
+        return secret_key in read_response.get('data', {}) and 'metadata' not in read_response.get('data', {})
 
     @staticmethod
     def __is_key_value_v2(read_response, secret_key):
@@ -322,7 +322,7 @@ class VaultAnyConfig(Client):
         Returns:
             Bool
         """
-        return secret_key in read_response.get('data', {}).get('data', {})
+        return secret_key in read_response.get('data', {}).get('data', {}) and 'metadata' in read_response.get('data', {})
 
     def __get_nested_config(self, path_list, value):
         """
