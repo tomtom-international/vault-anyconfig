@@ -284,7 +284,7 @@ class VaultAnyConfig(Client):
         Detects the secret engine returning a secret (currently *only* supports key-value versions 1 and 2) and returns the requested key from the
         secret.
         Args:
-            - read_response: repsonse from HVAC read function
+            - read_response: response from HVAC read function
             - secret_key: secret key being retrieved
         Returns:
             secret string
@@ -304,29 +304,25 @@ class VaultAnyConfig(Client):
         Checks if the response is from the key value v1 secret engine.
         See https://www.vaultproject.io/api/secret/kv/kv-v1.html#sample-response-1
         Args:
-            - read_response: repsonse from HVAC read function
+            - read_response: response from HVAC read function
             - secret_key: secret key being retrieved
         Returns:
             Bool
         """
-        if secret_key in read_response.get('data', {}):
-            return True
-        return False
+        return secret_key in read_response.get('data', {})
 
     @staticmethod
     def __is_key_value_v2(read_response, secret_key):
         """
-        Checks if the response is from the key value v1 secret engine
+        Checks if the response is from the key value v2 secret engine
         See https://www.vaultproject.io/api/secret/kv/kv-v2.html#sample-response-1
         Args:
-            - read_response: repsonse from HVAC read function
+            - read_response: response from HVAC read function
             - secret_key: secret key being retrieved
         Returns:
             Bool
         """
-        if secret_key in read_response.get('data', {}).get('data', {}):
-            return True
-        return False
+        return secret_key in read_response.get('data', {}).get('data', {})
 
     def __get_nested_config(self, path_list, value):
         """
