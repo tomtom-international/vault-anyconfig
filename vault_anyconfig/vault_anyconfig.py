@@ -294,12 +294,13 @@ class VaultAnyConfig(Client):
             secret string
         """
         if cls.__is_key_value_v1(read_response, secret_key):
-            return read_response['data'][secret_key]
+            secret_string = read_response['data'][secret_key]
         elif cls.__is_key_value_v2(read_response, secret_key):
-            return read_response['data']['data'][secret_key]
+            secret_string = read_response['data']['data'][secret_key]
         else:
             raise RuntimeError(
                 "Invalid response recieved. Possibly due to an unsupported secrets engine, vault-anyconfig currently only supports kv1 and kv2.")
+        return secret_string
 
     @staticmethod
     def __is_key_value_v1(read_response, secret_key):
