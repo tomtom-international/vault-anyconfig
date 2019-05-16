@@ -163,7 +163,15 @@ class VaultAnyConfig(Client):
             - secret_path: secret's path in Vault
             - secret_key: key in the secret in Vault to access
         """
-        secret_file_string = self.read(secret_path)["data"][secret_key]
+        # Handle v1 vs v2 of the key-value secret store, a version isn't returned in the response so check the shape of the data
+        # v1: https://www.vaultproject.io/api/secret/kv/kv-v1.html#sample-response-1
+        # v2: https://www.vaultproject.io/api/secret/kv/kv-v2.html
+        raw_secret_response = self.read(secret_path)["data"]
+        if secret_key in raw_secret_response:
+            secret_file_string = raw_secret_response[secret_key]
+        else:
+            secret_file_string = raw_secret_response['data'][secret_key]
+
         real_file_path = abspath(file_path)
         if isfile(file_path):
             try:
@@ -234,7 +242,15 @@ class VaultAnyConfig(Client):
             else:
                 secret_key = config_key_path[-1]
 
-            read_vault_secret = self.read(secret_path)["data"][secret_key]
+            # Handle v1 vs v2 of the key-value secret store, a version isn't returned in the response so check the shape of the data
+            # v1: https://www.vaultproject.io/api/secret/kv/kv-v1.html#sample-response-1
+            # v2: https://www.vaultproject.io/api/secret/kv/kv-v2.html
+            raw_secret_response = self.read(secret_path)["data"]
+            if secret_key in raw_secret_response:
+                read_vault_secret = raw_secret_response[secret_key]
+            else:
+                read_vault_secret = raw_secret_response['data'][secret_key]
+
             config_part = self.__get_nested_config(
                 config_key_path, read_vault_secret)
             merge(vault_config_parts, config_part)
