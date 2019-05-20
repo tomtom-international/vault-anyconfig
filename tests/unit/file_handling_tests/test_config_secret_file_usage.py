@@ -20,7 +20,7 @@ def test_dump(
     localhost_client,
     gen_input_config,
     gen_processed_config,
-    gen_vault_response,
+    gen_vault_response_kv1,
     file_path,
     file_path_normalized,
     file_contents,
@@ -29,9 +29,10 @@ def test_dump(
     """
     Basic test of the dump function with secret file writing
     """
-    mock_hvac_client_read.return_value = gen_vault_response()
+    mock_hvac_client_read.return_value = gen_vault_response_kv1()
 
-    localhost_client.dump(gen_input_config(), "out.json", process_secret_files=True)
+    localhost_client.dump(gen_input_config(), "out.json",
+                          process_secret_files=True)
 
     mock_dump.assert_called_once_with(gen_input_config(), "out.json")
 
@@ -55,7 +56,7 @@ def test_dumps(
     localhost_client,
     gen_input_config,
     gen_processed_config,
-    gen_vault_response,
+    gen_vault_response_kv1,
     file_path,
     file_path_normalized,
     file_contents,
@@ -64,7 +65,7 @@ def test_dumps(
     """
     Basic test of the dumps function with secret file writing
     """
-    mock_hvac_client_read.return_value = gen_vault_response()
+    mock_hvac_client_read.return_value = gen_vault_response_kv1()
 
     localhost_client.dumps(gen_input_config(), process_secret_files=True)
 
@@ -90,7 +91,7 @@ def test_load(
     localhost_client,
     gen_input_config,
     gen_processed_config,
-    gen_vault_response,
+    gen_vault_response_kv1,
     file_path,
     file_path_normalized,
     file_contents,
@@ -100,7 +101,7 @@ def test_load(
     Basic test of the load function with file writing
     """
     mock_load.return_value = gen_input_config()
-    mock_hvac_client_read.return_value = gen_vault_response()
+    mock_hvac_client_read.return_value = gen_vault_response_kv1()
 
     assert (
         localhost_client.load("in.json", process_secret_files=True)
@@ -129,7 +130,7 @@ def test_loads(
     localhost_client,
     gen_input_config,
     gen_processed_config,
-    gen_vault_response,
+    gen_vault_response_kv1,
     file_path,
     file_path_normalized,
     file_contents,
@@ -139,7 +140,7 @@ def test_loads(
     Basic test of the loads function with file writing
     """
     mock_loads.return_value = gen_input_config()
-    mock_hvac_client_read.return_value = gen_vault_response()
+    mock_hvac_client_read.return_value = gen_vault_response_kv1()
     input_config_json = jdumps(gen_input_config())
 
     assert (
@@ -169,7 +170,7 @@ def test_dump_config_file_reference(
     localhost_client,
     gen_input_config,
     gen_processed_config,
-    gen_vault_response,
+    gen_vault_response_kv1,
     file_path,
     file_path_normalized,
     file_contents,
@@ -181,7 +182,7 @@ def test_dump_config_file_reference(
     by_ref_file_path = "acme.cert_path"
     input_config = gen_input_config({by_ref_file_path: secret_path})
 
-    mock_hvac_client_read.return_value = gen_vault_response()
+    mock_hvac_client_read.return_value = gen_vault_response_kv1()
 
     localhost_client.dump(input_config, "out.json", process_secret_files=True)
 
@@ -199,7 +200,7 @@ def test_dump_disable_vault_files(
     mock_hvac_client_read,
     mock_dump,
     localhost_client,
-    gen_vault_response,
+    gen_vault_response_kv1,
     gen_input_config,
 ):
     """
@@ -207,7 +208,8 @@ def test_dump_disable_vault_files(
     """
     mock_hvac_client_read.return_value = gen_input_config()
 
-    localhost_client.dump(gen_input_config(), "out.json", process_secret_files=False)
+    localhost_client.dump(gen_input_config(), "out.json",
+                          process_secret_files=False)
 
     mock_hvac_client_read.assert_not_called()
     mock_dump.assert_called_with(gen_input_config(), "out.json")
@@ -279,7 +281,7 @@ def test_dump_passthrough(
     localhost_client,
     gen_input_config,
     gen_processed_config,
-    gen_vault_response,
+    gen_vault_response_kv1,
     file_path,
     file_path_normalized,
     file_contents,
@@ -288,7 +290,7 @@ def test_dump_passthrough(
     """
     Tests a warning is thrown where there are files specified but the passthrough flag is set.
     """
-    mock_hvac_client_read.return_value = gen_vault_response()
+    mock_hvac_client_read.return_value = gen_vault_response_kv1()
 
     with warns(UserWarning):
         VaultAnyConfig().dump(gen_input_config(), "out.json", process_secret_files=True)

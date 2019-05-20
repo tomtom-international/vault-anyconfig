@@ -163,7 +163,9 @@ class VaultAnyConfig(Client):
             - secret_path: secret's path in Vault
             - secret_key: key in the secret in Vault to access
         """
-        secret_file_string = self.read(secret_path)["data"][secret_key]
+        secret_file_string = self.__process_response(
+            self.read(secret_path), secret_key)
+
         real_file_path = abspath(file_path)
         if isfile(file_path):
             try:
@@ -234,7 +236,9 @@ class VaultAnyConfig(Client):
             else:
                 secret_key = config_key_path[-1]
 
-            read_vault_secret = self.read(secret_path)["data"][secret_key]
+            read_vault_secret = self.__process_response(
+                self.read(secret_path), secret_key)
+
             config_part = self.__get_nested_config(
                 config_key_path, read_vault_secret)
             merge(vault_config_parts, config_part)
@@ -273,6 +277,51 @@ class VaultAnyConfig(Client):
             self.save_file_from_vault(real_file_path, secret_path, secret_key)
 
         return
+
+    @classmethod
+    def __process_response(cls, read_response, secret_key):
+        """
+        Detects the secret engine returning a secret (currently *only* supports key-value versions 1 and 2) and returns the requested key from the
+        secret.
+        Args:
+            - read_response: response from HVAC read function
+            - secret_key: secret key being retrieved
+        Returns:
+            secret string
+        """
+        if cls.__is_key_value_v1(read_response, secret_key):
+            secret_string = read_response['data'][secret_key]
+        elif cls.__is_key_value_v2(read_response):
+            secret_string = read_response['data']['data'][secret_key]
+        else:
+            raise RuntimeError(
+                "Invalid response recieved. Possibly due to an unsupported secrets engine, vault-anyconfig currently only supports kv1 and kv2.")
+        return secret_string
+
+    @staticmethod
+    def __is_key_value_v1(read_response, secret_key):
+        """
+        Checks if the response is from the key value v1 secret engine.
+        See https://www.vaultproject.io/api/secret/kv/kv-v1.html#sample-response-1
+        Args:
+            - read_response: response from HVAC read function
+            - secret_key: secret key being retrieved
+        Returns:
+            Bool
+        """
+        return isinstance(read_response.get('data', {}).get(secret_key, {}), str)
+
+    @staticmethod
+    def __is_key_value_v2(read_response):
+        """
+        Checks if the response is from the key value v2 secret engine
+        See https://www.vaultproject.io/api/secret/kv/kv-v2.html#sample-response-1
+        Args:
+            - read_response: response from HVAC read function
+        Returns:
+            Bool
+        """
+        return isinstance(read_response.get('data', {}).get('data', ''), dict)
 
     def __get_nested_config(self, path_list, value):
         """
