@@ -21,8 +21,7 @@ from vault_anyconfig.vault_anyconfig import VaultAnyConfig
     secret_path=strat.text(
         min_size=1,
         alphabet=strat.characters(
-            blacklist_categories=("C"),
-            # Since we separately specify the key, we cannot include "." in the secret path
+            blacklist_categories=("C"), # Since we separately specify the key, we cannot include "." in the secret path
             blacklist_characters=".",
         ),
     ),

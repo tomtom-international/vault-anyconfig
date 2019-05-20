@@ -305,6 +305,7 @@ class VaultAnyConfig(Client):
         See https://www.vaultproject.io/api/secret/kv/kv-v1.html#sample-response-1
         Args:
             - read_response: response from HVAC read function
+            - secret_key: secret key being retrieved
         Returns:
             Bool
         """

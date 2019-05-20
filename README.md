@@ -22,7 +22,7 @@ Currently vault-anyconfig **only** supports version 1 and 2 of the key value sto
 ### kv2 Limitations
 
 * vault-anyconfig **only** will read the latest version of a secret to maintain simplicity in the configuration file
-* you must add `data` after the mointpoint for a kv2 secret, e.g. `secret/data/example-secret` due to limitations in the HVAC client
+* you must add `data` after the mountpoint for a kv2 secret, e.g. `secret/data/example-secret` due to limitations in the HVAC client
 
 ## Files and Formatting
 
