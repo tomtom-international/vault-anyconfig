@@ -16,4 +16,5 @@ resources:
 jobs:
   - template: jobs/python.setup.py.yml@templates
     parameters:
+      dockerDeploy: false
       pypiConnector: "pypi-tomtom"
