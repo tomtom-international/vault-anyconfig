@@ -231,7 +231,7 @@ class VaultAnyConfig(Client):
             # Optionally map the key in the configuration to a different key in the Vault
             secret_path_split = secret_path.split(".")
             if len(secret_path_split) > 1:
-                secret_path = "".join(secret_path_split[:-1])
+                secret_path = ".".join(secret_path_split[:-1])
                 secret_key = secret_path_split[-1]
             else:
                 secret_key = config_key_path[-1]
