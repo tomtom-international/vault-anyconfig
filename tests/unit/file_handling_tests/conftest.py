@@ -63,7 +63,7 @@ def gen_processed_config(gen_input_config,):
 
 
 @fixture
-def gen_vault_response(file_contents):
+def gen_vault_response_kv1(file_contents):
     """
     Provides the vault response for a given processed configuration file
     """

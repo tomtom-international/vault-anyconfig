@@ -21,8 +21,8 @@ from vault_anyconfig.vault_anyconfig import VaultAnyConfig
     secret_path=strat.text(
         min_size=1,
         alphabet=strat.characters(
-            blacklist_categories=("C"),
-            blacklist_characters=".",  # Since we separately specify the key, we cannot include "." in the secret path
+            blacklist_categories=("C"), # Since we separately specify the key, we cannot include "." in the secret path
+            blacklist_characters=".",
         ),
     ),
     secret_key=strat.text(
@@ -63,23 +63,25 @@ def test_dump_different_file_paths_and_secrets(
     localhost_client,
     gen_input_config,
     gen_processed_config,
-    gen_vault_response,
+    gen_vault_response_kv1,
     file_contents,
 ):
     """
     Tests that secret keys, whitespace in paths, and hidden files are all handled correctly
     """
-    mock_hvac_client_read.return_value = gen_vault_response(
+    mock_hvac_client_read.return_value = gen_vault_response_kv1(
         file_contents=file_contents, secret_key=secret_key
     )
 
     if secret_key != "":
         secret_key = "." + secret_key
 
-    input_config = gen_input_config(vault_files={file_path: secret_path + secret_key})
+    input_config = gen_input_config(
+        vault_files={file_path: secret_path + secret_key})
 
     with patch("builtins.open", new_callable=mock_open) as mock_open_handle:
-        localhost_client.dump(input_config, "out.json", process_secret_files=True)
+        localhost_client.dump(input_config, "out.json",
+                              process_secret_files=True)
         mock_open_handle.assert_called_once_with(abspath(file_path), "w")
         mock_open_handle().write.assert_called_once_with(file_contents)
 
