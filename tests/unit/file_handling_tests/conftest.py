@@ -34,10 +34,7 @@ def gen_input_config(file_path, secret_path):
     """
 
     def _gen_input_config(vault_files={file_path: secret_path}):
-        input_config = {
-            "acme": {"host": "https://acme.com", "cert_path": file_path},
-            "vault_files": vault_files,
-        }
+        input_config = {"acme": {"host": "https://acme.com", "cert_path": file_path}, "vault_files": vault_files}
         return input_config
 
     return _gen_input_config
@@ -51,10 +48,7 @@ def gen_processed_config(gen_input_config,):
 
     def _gen_processed_config(input_config=gen_input_config()):
         processed_config = {
-            "acme": {
-                "host": input_config["acme"]["host"],
-                "cert_path": input_config["acme"]["cert_path"],
-            },
+            "acme": {"host": input_config["acme"]["host"], "cert_path": input_config["acme"]["cert_path"]},
             "vault_files": input_config["vault_files"],
         }
         return processed_config

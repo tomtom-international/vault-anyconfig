@@ -7,13 +7,7 @@ from os.path import abspath, isfile
 from stat import S_IRUSR, S_IWUSR
 
 from hvac import Client
-from anyconfig import (
-    dump as dump_base,
-    dumps as dumps_base,
-    load as load_base,
-    loads as loads_base,
-    merge,
-)
+from anyconfig import dump as dump_base, dumps as dumps_base, load as load_base, loads as loads_base, merge
 
 
 class VaultAnyConfig(Client):
@@ -73,16 +67,12 @@ class VaultAnyConfig(Client):
             token_path = creds.pop("token_path", None)
             if token_path:
                 with open(token_path, "r") as token_file:
-                    creds['jwt'] = token_file.read()
+                    creds["jwt"] = token_file.read()
 
         try:
             method = getattr(self, auth_method)
         except AttributeError:
-            raise NotImplementedError(
-                "HVAC does not provide {} as an authentication method".format(
-                    auth_method
-                )
-            )
+            raise NotImplementedError("HVAC does not provide {} as an authentication method".format(auth_method))
 
         method(**creds)
         return self.is_authenticated()
@@ -163,8 +153,7 @@ class VaultAnyConfig(Client):
             - secret_path: secret's path in Vault
             - secret_key: key in the secret in Vault to access
         """
-        secret_file_string = self.__process_response(
-            self.read(secret_path), secret_key)
+        secret_file_string = self.__process_response(self.read(secret_path), secret_key)
 
         real_file_path = abspath(file_path)
         if isfile(file_path):
@@ -236,11 +225,9 @@ class VaultAnyConfig(Client):
             else:
                 secret_key = config_key_path[-1]
 
-            read_vault_secret = self.__process_response(
-                self.read(secret_path), secret_key)
+            read_vault_secret = self.__process_response(self.read(secret_path), secret_key)
 
-            config_part = self.__get_nested_config(
-                config_key_path, read_vault_secret)
+            config_part = self.__get_nested_config(config_key_path, read_vault_secret)
             merge(vault_config_parts, config_part)
 
         return vault_config_parts
@@ -261,9 +248,7 @@ class VaultAnyConfig(Client):
 
         for file_path, secret in config.get("vault_files", {}).items():
             # Check if the filepath actually is a key in the configuration file, and use it if it is
-            real_file_path = self.__get_value_nested_config(
-                file_path.split("."), config
-            )
+            real_file_path = self.__get_value_nested_config(file_path.split("."), config)
             if not real_file_path:
                 real_file_path = file_path
 
@@ -290,12 +275,13 @@ class VaultAnyConfig(Client):
             secret string
         """
         if cls.__is_key_value_v1(read_response, secret_key):
-            secret_string = read_response['data'][secret_key]
+            secret_string = read_response["data"][secret_key]
         elif cls.__is_key_value_v2(read_response):
-            secret_string = read_response['data']['data'][secret_key]
+            secret_string = read_response["data"]["data"][secret_key]
         else:
             raise RuntimeError(
-                "Invalid response recieved. Possibly due to an unsupported secrets engine, vault-anyconfig currently only supports kv1 and kv2.")
+                "Invalid response recieved. Possibly due to an unsupported secrets engine, vault-anyconfig currently only supports kv1 and kv2."
+            )
         return secret_string
 
     @staticmethod
@@ -309,7 +295,7 @@ class VaultAnyConfig(Client):
         Returns:
             Bool
         """
-        return isinstance(read_response.get('data', {}).get(secret_key, {}), str)
+        return isinstance(read_response.get("data", {}).get(secret_key, {}), str)
 
     @staticmethod
     def __is_key_value_v2(read_response):
@@ -321,7 +307,7 @@ class VaultAnyConfig(Client):
         Returns:
             Bool
         """
-        return isinstance(read_response.get('data', {}).get('data', ''), dict)
+        return isinstance(read_response.get("data", {}).get("data", ""), dict)
 
     def __get_nested_config(self, path_list, value):
         """
@@ -338,8 +324,7 @@ class VaultAnyConfig(Client):
         if len(path_list) == 1:
             config_part[path_list[0]] = value
         else:
-            config_part[path_list[0]] = self.__get_nested_config(
-                path_list[1:], value)
+            config_part[path_list[0]] = self.__get_nested_config(path_list[1:], value)
         return config_part
 
     def __get_value_nested_config(self, path_list, config):
