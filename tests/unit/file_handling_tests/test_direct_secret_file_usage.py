@@ -40,10 +40,7 @@ def test_write_existing_file(
     mock_open_handle.assert_called_once_with(file_path_normalized, "w")
     mock_open_handle().write.assert_called_once_with(file_contents)
 
-    chmod_calls = [
-        call(file_path_normalized, S_IWUSR),
-        call(file_path_normalized, S_IRUSR),
-    ]
+    chmod_calls = [call(file_path_normalized, S_IWUSR), call(file_path_normalized, S_IRUSR)]
     mock_chmod.assert_has_calls(chmod_calls, any_order=False)
 
 
@@ -113,4 +110,3 @@ def test_file_with_read_perm_fail(
 
     chmod_calls = [call(file_path_normalized, S_IRUSR)]
     mock_chmod.assert_has_calls(chmod_calls, any_order=False)
-

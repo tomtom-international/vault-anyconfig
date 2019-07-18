@@ -21,3 +21,4 @@ pytest-runner==4.4
 setuptools-lint==0.6.0
 tox==3.8.4
 
+pytest-black==0.3.7

@@ -37,14 +37,13 @@ def gen_vault_response_kv2():
     """
 
     def _gen_vault_response(contents, secret_key):
-        vault_response = {"data": {
-            "data": {secret_key: contents}},
-            "metadata": {"version": "1"}
-        }
+        vault_response = {"data": {"data": {secret_key: contents}}, "metadata": {"version": "1"}}
 
         return vault_response
 
     return _gen_vault_response
+
+
 @fixture
 def gen_input_config():
     """
@@ -52,10 +51,7 @@ def gen_input_config():
     """
 
     def _gen_input_config(
-        vault_secrets={
-            "acme.user": "secret/acme/server/user",
-            "acme.pwd": "secret/acme/server/user",
-        }
+        vault_secrets={"acme.user": "secret/acme/server/user", "acme.pwd": "secret/acme/server/user"}
     ):
         input_config = {
             "acme": {"host": "https://acme.com", "cert_path": "/secret/cert"},

@@ -31,8 +31,7 @@ def test_dump(
     """
     mock_hvac_client_read.return_value = gen_vault_response_kv1()
 
-    localhost_client.dump(gen_input_config(), "out.json",
-                          process_secret_files=True)
+    localhost_client.dump(gen_input_config(), "out.json", process_secret_files=True)
 
     mock_dump.assert_called_once_with(gen_input_config(), "out.json")
 
@@ -103,10 +102,7 @@ def test_load(
     mock_load.return_value = gen_input_config()
     mock_hvac_client_read.return_value = gen_vault_response_kv1()
 
-    assert (
-        localhost_client.load("in.json", process_secret_files=True)
-        == gen_processed_config()
-    )
+    assert localhost_client.load("in.json", process_secret_files=True) == gen_processed_config()
 
     mock_load.assert_called_once_with("in.json")
 
@@ -143,10 +139,7 @@ def test_loads(
     mock_hvac_client_read.return_value = gen_vault_response_kv1()
     input_config_json = jdumps(gen_input_config())
 
-    assert (
-        localhost_client.loads(input_config_json, process_secret_files=True)
-        == gen_processed_config()
-    )
+    assert localhost_client.loads(input_config_json, process_secret_files=True) == gen_processed_config()
 
     mock_loads.assert_called_once_with(jdumps(gen_input_config()))
 
@@ -197,19 +190,14 @@ def test_dump_config_file_reference(
 @patch("vault_anyconfig.vault_anyconfig.dump_base")
 @patch("vault_anyconfig.vault_anyconfig.Client.read")
 def test_dump_disable_vault_files(
-    mock_hvac_client_read,
-    mock_dump,
-    localhost_client,
-    gen_vault_response_kv1,
-    gen_input_config,
+    mock_hvac_client_read, mock_dump, localhost_client, gen_vault_response_kv1, gen_input_config
 ):
     """
     Ensure when process_secret_files is set to false, mock_hvac_client is never called (and thus the code for writing files was not triggered)
     """
     mock_hvac_client_read.return_value = gen_input_config()
 
-    localhost_client.dump(gen_input_config(), "out.json",
-                          process_secret_files=False)
+    localhost_client.dump(gen_input_config(), "out.json", process_secret_files=False)
 
     mock_hvac_client_read.assert_not_called()
     mock_dump.assert_called_with(gen_input_config(), "out.json")
@@ -217,9 +205,7 @@ def test_dump_disable_vault_files(
 
 @patch("vault_anyconfig.vault_anyconfig.dumps_base")
 @patch("vault_anyconfig.vault_anyconfig.Client.read")
-def test_dumps_disable_vault_files(
-    mock_hvac_client_read, mock_dumps, localhost_client, gen_input_config
-):
+def test_dumps_disable_vault_files(mock_hvac_client_read, mock_dumps, localhost_client, gen_input_config):
     """
     Ensure when process_secret_files is set to false, mock_hvac_client is never called (and thus the code for writing files was not triggered)
     """
@@ -233,21 +219,14 @@ def test_dumps_disable_vault_files(
 @patch("vault_anyconfig.vault_anyconfig.load_base")
 @patch("vault_anyconfig.vault_anyconfig.Client.read")
 def test_load_disable_vault_files(
-    mock_hvac_client_read,
-    mock_load,
-    localhost_client,
-    gen_input_config,
-    gen_processed_config,
+    mock_hvac_client_read, mock_load, localhost_client, gen_input_config, gen_processed_config
 ):
     """
     Ensure when process_secret_files is set to false, mock_hvac_client is never called (and thus the code for writing files was not triggered)
     """
     mock_load.return_value = gen_input_config()
 
-    assert (
-        localhost_client.load("in.json", process_secret_files=False)
-        == gen_processed_config()
-    )
+    assert localhost_client.load("in.json", process_secret_files=False) == gen_processed_config()
 
     mock_hvac_client_read.assert_not_called()
     mock_load.assert_called_with("in.json")
@@ -255,9 +234,7 @@ def test_load_disable_vault_files(
 
 @patch("vault_anyconfig.vault_anyconfig.loads_base")
 @patch("vault_anyconfig.vault_anyconfig.Client.read")
-def test_loads_disable_vault_files(
-    mock_hvac_client_read, mock_loads, localhost_client, gen_input_config
-):
+def test_loads_disable_vault_files(mock_hvac_client_read, mock_loads, localhost_client, gen_input_config):
     """
     Ensure when process_secret_files is set to false, mock_hvac_client is never called (and thus the code for writing files was not triggered)
     """

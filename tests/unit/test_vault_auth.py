@@ -20,11 +20,7 @@ def gen_vault_creds():
 
     def _gen_vault_creds():
         vault_creds = {
-            "vault_creds": {
-                "role_id": "test-role-id",
-                "secret_id": "test-secret-id",
-                "auth_method": "approle",
-            }
+            "vault_creds": {"role_id": "test-role-id", "secret_id": "test-secret-id", "auth_method": "approle"}
         }
         return vault_creds
 
@@ -34,13 +30,7 @@ def gen_vault_creds():
 @patch("vault_anyconfig.vault_anyconfig.Client.is_authenticated")
 @patch("vault_anyconfig.vault_anyconfig.Client.auth_approle")
 @patch("vault_anyconfig.vault_anyconfig.load_base")
-def test_auth_from_file(
-    mock_load,
-    mock_auth_approle,
-    mock_is_authenticated,
-    localhost_client,
-    gen_vault_creds,
-):
+def test_auth_from_file(mock_load, mock_auth_approle, mock_is_authenticated, localhost_client, gen_vault_creds):
     """
     Basic test for the auth_from_file function
     """
@@ -53,17 +43,14 @@ def test_auth_from_file(
 
     mock_load.assert_called_with("config.json")
     mock_auth_approle.assert_called_with(
-        role_id=compare_vault_creds["vault_creds"]["role_id"],
-        secret_id=compare_vault_creds["vault_creds"]["secret_id"],
+        role_id=compare_vault_creds["vault_creds"]["role_id"], secret_id=compare_vault_creds["vault_creds"]["secret_id"]
     )
     mock_is_authenticated.assert_called_with()
 
 
 @patch("vault_anyconfig.vault_anyconfig.Client.is_authenticated")
 @patch("vault_anyconfig.vault_anyconfig.load_base")
-def test_auth_from_file_bad_method(
-    mock_load, mock_is_authenticated, localhost_client, gen_vault_creds
-):
+def test_auth_from_file_bad_method(mock_load, mock_is_authenticated, localhost_client, gen_vault_creds):
     """
     Test that the exception is thrown as expected when using a bad authentication method
     """
@@ -87,13 +74,7 @@ def test_auth_from_file_k8s_method(
     """
     Test that the kubernetes method *without* the token path configured is called directly
     """
-    local_vault_creds = {
-        "vault_creds": {
-            "auth_method": "kubernetes",
-            "role": "test_role",
-            "jwt": "jwt_string"
-        }
-    }
+    local_vault_creds = {"vault_creds": {"auth_method": "kubernetes", "role": "test_role", "jwt": "jwt_string"}}
     mock_load.return_value = local_vault_creds
     mock_is_authenticated.return_value = False
 
@@ -116,7 +97,7 @@ def test_auth_from_file_k8s_method_token_path(
         "vault_creds": {
             "auth_method": "kubernetes",
             "role": "test_role",
-            "token_path": "/var/run/secrets/kubernetes.io/serviceaccount"
+            "token_path": "/var/run/secrets/kubernetes.io/serviceaccount",
         }
     }
     mock_load.return_value = local_vault_creds
@@ -124,8 +105,7 @@ def test_auth_from_file_k8s_method_token_path(
 
     with patch("builtins.open", mock_open(read_data="jwt_string")) as mock_open_handle:
         localhost_client.auth_from_file("config.json")
-        mock_open_handle.assert_called_once_with(
-            "/var/run/secrets/kubernetes.io/serviceaccount", "r")
+        mock_open_handle.assert_called_once_with("/var/run/secrets/kubernetes.io/serviceaccount", "r")
 
     mock_load.assert_called_with("config.json")
     mock_auth_kubernetes.assert_called_with(role="test_role", jwt="jwt_string")
