@@ -52,7 +52,18 @@ class VaultAnyConfig(Client):
         else:
             self.pass_through_flag = True
 
-    def auth_from_file(self, vault_creds=None, vault_creds_file=None):
+    def auth_from_file(self, vault_creds_file=None):
+        """
+        Deprecated function, has been replaced with auto_auth. Currently will work as a passthrough to auto_auth.
+        """
+        warn(
+            "The auth_from_file method is deprecated and has been replaced with auto_auth. It will be removed in a future release.",
+            DeprecationWarning,
+        )
+
+        return self.auto_auth(vault_creds_file)
+
+    def auto_auth(self, vault_creds=None):
         """
         Invokes the specified Vault authentication method and provides credentials to it from a configuration file
         See https://hvac.readthedocs.io/en/latest/usage/auth_methods/index.html for a list of HVAC auth methods.
@@ -65,22 +76,11 @@ class VaultAnyConfig(Client):
                 https://kubernetes.io/docs/reference/access-authn-authz/service-accounts-admin/#service-account-admission-controller
 
         Args:
+            - vault_creds_file: string or file path with the credentials for the Vault
             - vault_creds_file: file containing the credentials for the Vault
         Returns:
             bool of authenication status
         """
-        # Deprecation warning for vault_creds_file
-        warn(
-            "The vault_creds_file parameter is deprecated and will be removed in a feature release.", DeprecationWarning
-        )
-
-        if vault_creds_file and vault_creds:
-            warn(
-                "Both vault_creds and vault_creds_file are set. Only vault_creds will be used, all usage of vault_creds_file should be removed",
-                UserWarning,
-            )
-        vault_creds = vault_creds if vault_creds else vault_creds_file
-
         if self.pass_through_flag or self.is_authenticated():
             return True
 
