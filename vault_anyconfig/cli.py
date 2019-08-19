@@ -33,7 +33,7 @@ def main():
     """
     args = parse_args(sys.argv[1:])
 
-    client = VaultAnyConfig(vault_config_file=args.vault_config)
+    client = VaultAnyConfig(vault_config_in=args.vault_config)
     client.auth_from_file(args.vault_creds)
 
     config = client.load(args.in_file, process_secret_files=args.secret_files_write, ac_parser=args.file_type)

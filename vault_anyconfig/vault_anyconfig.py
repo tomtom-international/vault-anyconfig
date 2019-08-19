@@ -15,7 +15,7 @@ class VaultAnyConfig(Client):
     Extends the HVAC Hashicorp Vault client to be able to read/write configuration files and update them with information from a Vault instance.
     """
 
-    def __init__(self, vault_config_file=None, **args):
+    def __init__(self, vault_config_in=None, vault_config_file=None, **args):
         """
         Creates a connection to Vault with either the arguments normally provided to an HVAC client instance, or a configuration file containing them.
         See https://github.com/hvac/hvac/blob/master/hvac/v1/__init__.py for detailed list of arguments available.
@@ -23,15 +23,18 @@ class VaultAnyConfig(Client):
         used on the HVAC Client's init function.
 
         Args:
-            - vault_config_file: [Optional] file[path] to a configuration file with Vault configuration arguments
+            - vault_config_in: [Optional] file[path] to a configuration file or string with Vault configuration arguments
+            - vault_config_in: [Deprecated] file[path] to a configuration file with Vault configuration arguments
             - args: [Optional] Arguments for an HVAC client, typically it will need at least url
         """
         self.pass_through_flag = False
 
-        if not vault_config_file:
+        if not vault_config_in and not vault_config_file:
             vault_config = args
+        elif isfile(vault_config_in) or vault_config_file is not None:
+            vault_config = load_base(vault_config_in).get("vault_config", {})
         else:
-            vault_config = load_base(vault_config_file).get("vault_config", {})
+            vault_config = loads_base(vault_config_in).get("vault_config", {})
 
         if vault_config:
             super().__init__(**vault_config)
