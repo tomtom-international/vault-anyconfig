@@ -24,10 +24,16 @@ class VaultAnyConfig(Client):
 
         Args:
             - vault_config_in: [Optional] file[path] to a configuration file or string with Vault configuration arguments
-            - vault_config_in: [Deprecated] file[path] to a configuration file with Vault configuration arguments
+            - vault_config_file: [Deprecated] file[path] to a configuration file with Vault configuration arguments
             - args: [Optional] Arguments for an HVAC client, typically it will need at least url
         """
         self.pass_through_flag = False
+
+        # Deprecation warning for vault_config_file
+        warn(
+            "The vault_config_file parameter is deprecated and will be removed in a feature release.",
+            DeprecationWarning,
+        )
 
         if not vault_config_in and not vault_config_file:
             vault_config = args
