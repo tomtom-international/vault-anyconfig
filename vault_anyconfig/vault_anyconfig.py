@@ -52,7 +52,7 @@ class VaultAnyConfig(Client):
         else:
             self.pass_through_flag = True
 
-    def auth_from_file(self, vault_creds_file):
+    def auth_from_file(self, vault_creds=None, vault_creds_file=None):
         """
         Invokes the specified Vault authentication method and provides credentials to it from a configuration file
         See https://hvac.readthedocs.io/en/latest/usage/auth_methods/index.html for a list of HVAC auth methods.
@@ -69,10 +69,22 @@ class VaultAnyConfig(Client):
         Returns:
             bool of authenication status
         """
+        # Deprecation warning for vault_creds_file
+        warn(
+            "The vault_creds_file parameter is deprecated and will be removed in a feature release.", DeprecationWarning
+        )
+
+        if vault_creds_file and vault_creds:
+            warn(
+                "Both vault_creds and vault_creds_file are set. Only vault_creds will be used, all usage of vault_creds_file should be removed",
+                UserWarning,
+            )
+        vault_creds = vault_creds if vault_creds else vault_creds_file
+
         if self.pass_through_flag or self.is_authenticated():
             return True
 
-        creds = load_base(vault_creds_file)["vault_creds"]
+        creds = self._smart_load(vault_creds)["vault_creds"]
         auth_method = "auth_" + creds["auth_method"]
         creds.pop("auth_method", None)
 
