@@ -47,7 +47,7 @@ def test_init_with_file(mock_hvac_client, mock_load, gen_vault_config):
     client = VaultAnyConfig(vault_config_in="config.json")
 
     assert not client.pass_through_flag
-    mock_load.assert_called_with("config.json")
+    mock_load.assert_called_with("config.json", False)
     mock_hvac_client.assert_called_with(url="http://localhost")
 
 
@@ -68,7 +68,7 @@ def test_init_passthrough(mock_load, gen_vault_config):
 
     client = VaultAnyConfig(vault_config_in="test\n")
     assert client.pass_through_flag
-    mock_load.assert_called_with("test\n")
+    mock_load.assert_called_with("test\n", False)
 
 
 @patch("vault_anyconfig.vault_anyconfig.loads_base")
@@ -80,7 +80,7 @@ def test_init_passthrough_no_vault_config_section(mock_load):
 
     client = VaultAnyConfig(vault_config_in="test:\n")
     assert client.pass_through_flag
-    mock_load.assert_called_with("test:\n")
+    mock_load.assert_called_with("test:\n", False)
 
 
 @patch("vault_anyconfig.vault_anyconfig.isfile")
@@ -94,4 +94,16 @@ def test_init_passthrough_file(mock_load, mock_isfile):
 
     client = VaultAnyConfig(vault_config_in="config.json")
     assert client.pass_through_flag
-    mock_load.assert_called_with("config.json")
+    mock_load.assert_called_with("config.json", False)
+
+
+@patch("vault_anyconfig.vault_anyconfig.loads_base")
+def test_init_passthrough_test_both_vault_config_in_and_vault_config_file(mock_load):
+    """
+    Tests that with a vault configuration in which both the vault_config_in and vault_config_file are set the vault_config_in parameter takes precedence.
+    """
+    mock_load.return_value = {}
+
+    client = VaultAnyConfig(vault_config_in="test:\n", vault_config_file="config.json")
+    assert client.pass_through_flag
+    mock_load.assert_called_with("test:\n", False)

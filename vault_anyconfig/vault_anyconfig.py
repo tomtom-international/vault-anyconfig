@@ -35,12 +35,17 @@ class VaultAnyConfig(Client):
             DeprecationWarning,
         )
 
+        if vault_config_file and vault_config_in:
+            warn(
+                "Both vault_config_in and vault_config_file are set. Only vault_config_in will be used, all usage of vault_config_file should be removed",
+                UserWarning,
+            )
+
         if not vault_config_in and not vault_config_file:
             vault_config = args
-        elif isfile(vault_config_in) or vault_config_file is not None:
-            vault_config = load_base(vault_config_in).get("vault_config", {})
         else:
-            vault_config = loads_base(vault_config_in).get("vault_config", {})
+            vault_config_file = vault_config_in if vault_config_in else vault_config_file
+            vault_config = self._smart_load(vault_config_file).get("vault_config", {})
 
         if vault_config:
             super().__init__(**vault_config)
@@ -85,6 +90,20 @@ class VaultAnyConfig(Client):
 
         method(**creds)
         return self.is_authenticated()
+
+    @staticmethod
+    def _smart_load(input_string, process_secret_files=False, **args):
+        """
+        Checks the input variable to determine if it is a file path or just a string, then calls load or loads as appropriate.
+        Args:
+            input: file path or string with configuration
+            process_secret_files: Boolean to determine if secret file sections be processed
+        Returns:
+            configuration dictionary
+        """
+        if isfile(input_string):
+            return load_base(input_string, process_secret_files, **args)
+        return loads_base(input_string, process_secret_files, **args)
 
     def dump(self, data, out, process_secret_files=False, **args):
         """
