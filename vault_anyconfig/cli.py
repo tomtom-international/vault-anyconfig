@@ -18,7 +18,7 @@ def parse_args(args):
     parser.add_argument("out_file", type=argparse.FileType("w"), help="File to write out after populating")
     parser.add_argument("--file_type", type=str, required=True, help="File type to read and write")
     parser.add_argument(
-        "--vault_config", type=str, required=True, help="Vault configuration file  as string or file path."
+        "--vault_config", type=str, required=True, help="Vault configuration file as string or file path."
     )
     parser.add_argument("--vault_creds", type=str, required=True, help="Vault credentials as string or file path")
     parser.add_argument(
