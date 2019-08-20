@@ -19,11 +19,11 @@ with open("README.md") as readme_file:
 with open("CHANGELOG.md") as changelog_file:
     changelog = changelog_file.read()
 
-requirements = ["anyconfig==0.9.8", "hvac==0.7.2"]
+requirements = ["anyconfig==0.9.9", "hvac==0.7.2"]
 
 setup_requirements = ["pytest-runner"]
 
-test_requirements = ["pytest", "pytest-cov", "coverage", "hypothesis"]
+test_requirements = ["pytest", "pytest-cov", "coverage", "hypothesis", "pyaml"]
 
 setup(
     author=vault_anyconfig.__author__,

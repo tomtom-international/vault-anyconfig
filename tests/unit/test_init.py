@@ -44,10 +44,10 @@ def test_init_with_file(mock_hvac_client, mock_load, gen_vault_config):
     """
     mock_load.return_value = gen_vault_config()
 
-    client = VaultAnyConfig(vault_config_in="config.json")
+    client = VaultAnyConfig(vault_config_in="config.json", ac_parser="test_parser")
 
     assert not client.pass_through_flag
-    mock_load.assert_called_with("config.json", False)
+    mock_load.assert_called_with("config.json", ac_parser="test_parser")
     mock_hvac_client.assert_called_with(url="http://localhost")
 
 
@@ -66,9 +66,9 @@ def test_init_passthrough(mock_load, gen_vault_config):
     """
     mock_load.return_value = gen_vault_config(empty=True)
 
-    client = VaultAnyConfig(vault_config_in="test\n")
+    client = VaultAnyConfig(vault_config_in="test\n", ac_parser="test_parser")
     assert client.pass_through_flag
-    mock_load.assert_called_with("test\n", False)
+    mock_load.assert_called_with("test\n", ac_parser="test_parser")
 
 
 @patch("vault_anyconfig.vault_anyconfig.loads_base")
@@ -78,9 +78,9 @@ def test_init_passthrough_no_vault_config_section(mock_load):
     """
     mock_load.return_value = {}
 
-    client = VaultAnyConfig(vault_config_in="test:\n")
+    client = VaultAnyConfig(vault_config_in="test:\n", ac_parser="test_parser")
     assert client.pass_through_flag
-    mock_load.assert_called_with("test:\n", False)
+    mock_load.assert_called_with("test:\n", ac_parser="test_parser")
 
 
 @patch("vault_anyconfig.vault_anyconfig.isfile")
@@ -94,7 +94,7 @@ def test_init_passthrough_file(mock_load, mock_isfile):
 
     client = VaultAnyConfig(vault_config_in="config.json")
     assert client.pass_through_flag
-    mock_load.assert_called_with("config.json", False)
+    mock_load.assert_called_with("config.json", ac_parser=None)
 
 
 @patch("vault_anyconfig.vault_anyconfig.loads_base")
@@ -104,6 +104,6 @@ def test_init_passthrough_test_both_vault_config_in_and_vault_config_file(mock_l
     """
     mock_load.return_value = {}
 
-    client = VaultAnyConfig(vault_config_in="test:\n", vault_config_file="config.json")
+    client = VaultAnyConfig(vault_config_in="test:\n", vault_config_file="config.json", ac_parser="test_parser")
     assert client.pass_through_flag
-    mock_load.assert_called_with("test:\n", False)
+    mock_load.assert_called_with("test:\n", ac_parser="test_parser")

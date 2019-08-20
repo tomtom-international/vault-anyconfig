@@ -37,11 +37,11 @@ def test_auto_auth(mock_load, mock_auth_approle, mock_is_authenticated, localhos
     mock_load.return_value = gen_vault_creds()
     mock_is_authenticated.return_value = False
 
-    localhost_client.auto_auth("config.json")
+    localhost_client.auto_auth("config.json", ac_parser="test_parser")
 
     compare_vault_creds = gen_vault_creds()
 
-    mock_load.assert_called_with("config.json", False)
+    mock_load.assert_called_with("config.json", ac_parser="test_parser")
     mock_auth_approle.assert_called_with(
         role_id=compare_vault_creds["vault_creds"]["role_id"], secret_id=compare_vault_creds["vault_creds"]["secret_id"]
     )
@@ -60,17 +60,15 @@ def test_auto_auth_bad_method(mock_load, mock_is_authenticated, localhost_client
     mock_is_authenticated.return_value = False
 
     with pytest.raises(NotImplementedError):
-        localhost_client.auto_auth("config.json")
+        localhost_client.auto_auth("config.json", ac_parser="test_parser")
 
-    mock_load.assert_called_with("config.json", False)
+    mock_load.assert_called_with("config.json", ac_parser="test_parser")
 
 
 @patch("vault_anyconfig.vault_anyconfig.Client.auth_kubernetes")
 @patch("vault_anyconfig.vault_anyconfig.Client.is_authenticated")
 @patch("vault_anyconfig.vault_anyconfig.loads_base")
-def test_auto_auth_k8s_method(
-    mock_load, mock_is_authenticated, mock_auth_kubernetes, localhost_client, gen_vault_creds
-):
+def test_auto_auth_k8s_method(mock_load, mock_is_authenticated, mock_auth_kubernetes, localhost_client):
     """
     Test that the kubernetes method *without* the token path configured is called directly
     """
@@ -78,9 +76,9 @@ def test_auto_auth_k8s_method(
     mock_load.return_value = local_vault_creds
     mock_is_authenticated.return_value = False
 
-    localhost_client.auto_auth("config.json")
+    localhost_client.auto_auth("config.json", ac_parser="test_parser")
 
-    mock_load.assert_called_with("config.json", False)
+    mock_load.assert_called_with("config.json", ac_parser="test_parser")
     mock_auth_kubernetes.assert_called_with(role="test_role", jwt="jwt_string")
 
 
@@ -89,7 +87,7 @@ def test_auto_auth_k8s_method(
 @patch("vault_anyconfig.vault_anyconfig.Client.is_authenticated")
 @patch("vault_anyconfig.vault_anyconfig.load_base")
 def test_auto_auth_k8s_method_token_path(
-    mock_load, mock_is_authenticated, mock_auth_kubernetes, mock_isfile, localhost_client, gen_vault_creds
+    mock_load, mock_is_authenticated, mock_auth_kubernetes, mock_isfile, localhost_client
 ):
     """
     Test that the kubernetes method *with* the token path configured is called with the value from the token file
@@ -109,7 +107,7 @@ def test_auto_auth_k8s_method_token_path(
         localhost_client.auto_auth("config.json")
         mock_open_handle.assert_called_once_with("/var/run/secrets/kubernetes.io/serviceaccount", "r")
 
-    mock_load.assert_called_with("config.json", False)
+    mock_load.assert_called_with("config.json", ac_parser=None)
     mock_auth_kubernetes.assert_called_with(role="test_role", jwt="jwt_string")
 
 
@@ -150,4 +148,4 @@ def test_auth_from_file(mock_auto_auth):
     """
     client = VaultAnyConfig()
     client.auth_from_file("test.json")
-    mock_auto_auth.assert_called_once_with("test.json")
+    mock_auto_auth.assert_called_once_with("test.json", ac_parser=None)
