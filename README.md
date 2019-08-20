@@ -26,11 +26,11 @@ Currently vault-anyconfig **only** supports version 1 and 2 of the key value sto
 
 ## Files and Formatting
 
-There are three configuration files, which can be stored in one, two or three files total as long as they are correctly written.
+There are three configuration files (which can also be provided as strings), which can be stored in one, two or three files total as long as they are correctly written.
 
 Examples in this section will be in JSON, but any file format supported by anyconfig can be used.
 
-### Vault Configuration File
+### Vault Configuration
 
 This configures the connection to the Vault, and must contain at least one member (usually the url parameter). If this section is not provided or is
 left empty, then the Vault instance will **not** be configured, and instead only the anyconfig functionality will be used.
@@ -47,9 +47,9 @@ The section must be named `vault_config`, and can contain any of the parameters 
 }
 ```
 
-### Vault Authentication File
+### Vault Authentication
 
-This provides authentication for use with the `auth_from_file` method, and must be named `vault_creds`. It should contain a member named `auth_method`
+This provides authentication for use with the `auto_auth` method, and must be named `vault_creds`. It should contain a member named `auth_method`
 which should correspond with one of the auth method from [the HVAC Client](https://hvac.readthedocs.io/en/latest/usage/auth_methods/index.html) (without the "`auth_`" prefix), e.g. `approle`. The remaining members
 should match the parameters for the specified auth method.
 
@@ -65,9 +65,9 @@ should match the parameters for the specified auth method.
 }
 ```
 
-### Main Configuration File
+### Main Configuration
 
-The main configuration file should consist of the configuration sections you need **without** the secrets included (unless passthrough mode is desired)
+The main configuration should consist of the configuration sections you need **without** the secrets included (unless passthrough mode is desired)
 and a section named `vault_secrets`. In the `vault_secrets` section, the keys are dot separated paths for the keys to insert into your configuration,
 and the values are the path to the secret in Vault. Please see the `vault_secrets` usage section for the different ways to specify secrets.
 
@@ -226,9 +226,9 @@ VaultAnyconfig can be initalized in three ways (for two different modes):
 
 ### Authentication With Vault
 
-You can use `auth_from_file` by providing a file as explained in the files and formatting section, or you can directly use the auth methods from
-[the HVAC Client](https://hvac.readthedocs.io/en/latest/usage/auth_methods/index.html). If passthrough mode is set, `auth_from_file` will always return
-true, but the HVAC client methods will fail, so it is recommended to use `auth_from_file` where possible.
+You can use `auto_auth` by providing a file as explained in the files and formatting section, or you can directly use the auth methods from
+[the HVAC Client](https://hvac.readthedocs.io/en/latest/usage/auth_methods/index.html). If passthrough mode is set, `auto_auth` will always return
+true, but the HVAC client methods will fail, so it is recommended to use `auto_auth` where possible.
 
 #### Loading/Saving Files with Keys Inserted
 

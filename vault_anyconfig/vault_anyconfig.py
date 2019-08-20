@@ -15,7 +15,7 @@ class VaultAnyConfig(Client):
     Extends the HVAC Hashicorp Vault client to be able to read/write configuration files and update them with information from a Vault instance.
     """
 
-    def __init__(self, vault_config_file=None, **args):
+    def __init__(self, vault_config_in=None, vault_config_file=None, **args):
         """
         Creates a connection to Vault with either the arguments normally provided to an HVAC client instance, or a configuration file containing them.
         See https://github.com/hvac/hvac/blob/master/hvac/v1/__init__.py for detailed list of arguments available.
@@ -23,22 +23,47 @@ class VaultAnyConfig(Client):
         used on the HVAC Client's init function.
 
         Args:
-            - vault_config_file: [Optional] file[path] to a configuration file with Vault configuration arguments
+            - vault_config_in: [Optional] file[path] to a configuration file or string with Vault configuration arguments
+            - vault_config_file: [Deprecated] file[path] to a configuration file with Vault configuration arguments
             - args: [Optional] Arguments for an HVAC client, typically it will need at least url
         """
         self.pass_through_flag = False
 
-        if not vault_config_file:
+        # Deprecation warning for vault_config_file
+        warn(
+            "The vault_config_file parameter is deprecated and will be removed in a feature release.",
+            DeprecationWarning,
+        )
+
+        if vault_config_file and vault_config_in:
+            warn(
+                "Both vault_config_in and vault_config_file are set. Only vault_config_in will be used, all usage of vault_config_file should be removed",
+                UserWarning,
+            )
+
+        if not vault_config_in and not vault_config_file:
             vault_config = args
         else:
-            vault_config = load_base(vault_config_file).get("vault_config", {})
+            vault_config_file = vault_config_in if vault_config_in else vault_config_file
+            vault_config = self._smart_load(vault_config_file).get("vault_config", {})
 
         if vault_config:
             super().__init__(**vault_config)
         else:
             self.pass_through_flag = True
 
-    def auth_from_file(self, vault_creds_file):
+    def auth_from_file(self, vault_creds_file=None):
+        """
+        Deprecated function, has been replaced with auto_auth. Currently will work as a passthrough to auto_auth.
+        """
+        warn(
+            "The auth_from_file method is deprecated and has been replaced with auto_auth. It will be removed in a future release.",
+            DeprecationWarning,
+        )
+
+        return self.auto_auth(vault_creds_file)
+
+    def auto_auth(self, vault_creds=None):
         """
         Invokes the specified Vault authentication method and provides credentials to it from a configuration file
         See https://hvac.readthedocs.io/en/latest/usage/auth_methods/index.html for a list of HVAC auth methods.
@@ -51,6 +76,7 @@ class VaultAnyConfig(Client):
                 https://kubernetes.io/docs/reference/access-authn-authz/service-accounts-admin/#service-account-admission-controller
 
         Args:
+            - vault_creds_file: string or file path with the credentials for the Vault
             - vault_creds_file: file containing the credentials for the Vault
         Returns:
             bool of authenication status
@@ -58,7 +84,7 @@ class VaultAnyConfig(Client):
         if self.pass_through_flag or self.is_authenticated():
             return True
 
-        creds = load_base(vault_creds_file)["vault_creds"]
+        creds = self._smart_load(vault_creds)["vault_creds"]
         auth_method = "auth_" + creds["auth_method"]
         creds.pop("auth_method", None)
 
@@ -76,6 +102,20 @@ class VaultAnyConfig(Client):
 
         method(**creds)
         return self.is_authenticated()
+
+    @staticmethod
+    def _smart_load(input_string, process_secret_files=False, **args):
+        """
+        Checks the input variable to determine if it is a file path or just a string, then calls load or loads as appropriate.
+        Args:
+            input: file path or string with configuration
+            process_secret_files: Boolean to determine if secret file sections be processed
+        Returns:
+            configuration dictionary
+        """
+        if isfile(input_string):
+            return load_base(input_string, process_secret_files, **args)
+        return loads_base(input_string, process_secret_files, **args)
 
     def dump(self, data, out, process_secret_files=False, **args):
         """
