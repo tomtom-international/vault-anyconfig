@@ -5,11 +5,14 @@ import json
 from unittest.mock import patch
 
 import pytest
-import yaml
+import pyaml
 
 from vault_anyconfig.vault_anyconfig import VaultAnyConfig
 
-PARSER_PARAMS = {"arg_names": "parser_dump_function,parser_name", "params": [(json.dumps, "json"), (yaml.dump, "yaml")]}
+PARSER_PARAMS = {
+    "arg_names": "parser_dump_function,parser_name",
+    "params": [(json.dumps, "json"), (pyaml.dump, "yaml")],
+}
 
 
 @pytest.mark.parametrize(PARSER_PARAMS["arg_names"], PARSER_PARAMS["params"])
