@@ -16,7 +16,7 @@ PARSER_PARAMS = {"arg_names": "parser_dump_function,parser_name", "params": [(js
 @patch("vault_anyconfig.vault_anyconfig.Client.__init__")
 def test_init_string(mock_hvac, parser_dump_function, parser_name):
     """
-    Ensures that a json configuration string will be correctly read
+    Tests that using a string to initialize the client will work
     """
     test_config = {"vault_config": {"test_value": 1, "test_value2": "value2"}, "extra_stuff": "test_me"}
     VaultAnyConfig(vault_config_in=parser_dump_function(test_config), ac_parser=parser_name)
@@ -28,7 +28,7 @@ def test_init_string(mock_hvac, parser_dump_function, parser_name):
 @patch("vault_anyconfig.vault_anyconfig.Client.auth_approle")
 def test_auto_auth(mock_auth_approle, mock_is_authenticated, parser_dump_function, parser_name):
     """
-    Basic test for the auto_auth function
+    Tests that string inputs to auto_auth will be correctly parsed
     """
     creds = {"vault_creds": {"auth_method": "approle", "role_id": "test_jim_bob", "secret_id": "test_123password"}}
     mock_is_authenticated.return_value = False
