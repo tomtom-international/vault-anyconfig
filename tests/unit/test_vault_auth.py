@@ -106,9 +106,7 @@ def test_auto_auth_aws_iam_method_role_only(
     local_vault_creds = {"vault_creds": {"auth_method": "aws_iam", "role": "test_role"}}
     mock_load.return_value = local_vault_creds
 
-    local_aws_creds = Mock(
-        access_key="test_access_key", secret_key="test_secret_key", session_token="test_session_token"
-    )
+    local_aws_creds = Mock(access_key="test_access_key", secret_key="test_secret_key", token="test_session_token")
     mock_get_credentials.return_value = local_aws_creds
 
     mock_is_authenticated.return_value = False
