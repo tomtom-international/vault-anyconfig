@@ -6,6 +6,7 @@ from os import chmod
 from os.path import abspath, isfile
 from stat import S_IRUSR, S_IWUSR
 
+import boto3
 from hvac import Client
 from anyconfig import dump as dump_base, dumps as dumps_base, load as load_base, loads as loads_base, merge
 
@@ -98,8 +99,6 @@ class VaultAnyConfig(Client):
                     creds["jwt"] = token_file.read()
 
         if auth_method == "auth_aws_iam" and ("access_key" not in creds and "secret_key" not in creds):
-            import boto3
-
             session = boto3.Session()
             credentials = session.get_credentials()
             creds["access_key"] = credentials.access_key
@@ -110,7 +109,9 @@ class VaultAnyConfig(Client):
         try:
             method = getattr(self, auth_method)
         except AttributeError:
-            raise NotImplementedError("HVAC does not provide {} as an authentication method".format(auth_method))
+            raise NotImplementedError(  # pylint: disable=raise-missing-from
+                "HVAC does not provide {} as an authentication method".format(auth_method)
+            )
 
         method(**creds)
         return self.is_authenticated()
