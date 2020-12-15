@@ -104,7 +104,7 @@ class VaultAnyConfig(Client):
             credentials = session.get_credentials()
             creds["access_key"] = credentials.access_key
             creds["secret_key"] = credentials.secret_key
-            if "session_token" in creds:
+            if credentials.token:
                 creds["session_token"] = credentials.token
 
         try:
