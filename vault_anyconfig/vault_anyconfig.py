@@ -109,9 +109,7 @@ class VaultAnyConfig(Client):
         try:
             method = getattr(self, auth_method)
         except AttributeError:
-            raise NotImplementedError(  # pylint: disable=raise-missing-from
-                "HVAC does not provide {} as an authentication method".format(auth_method)
-            )
+            raise NotImplementedError("HVAC does not provide {} as an authentication method".format(auth_method))
 
         method(**creds)
         return self.is_authenticated()
