@@ -3,7 +3,6 @@ Tests for the auth convenience method
 """
 
 from unittest.mock import patch, mock_open, call, Mock
-from copy import deepcopy
 from json import dumps as jdumps
 from stat import S_IRUSR, S_IWUSR
 
@@ -63,6 +62,61 @@ def test_auto_auth_bad_method(mock_load, mock_is_authenticated, localhost_client
         localhost_client.auto_auth("config.json", ac_parser="test_parser")
 
     mock_load.assert_called_with("config.json", ac_parser="test_parser")
+
+
+AWS_IAM_VAULT_CREDS = [
+    {"access_key": "test_access_key", "secret_key": "test_secret_key", "session_token": "test_session_token"},
+    {"access_key": "test_access_key", "secret_key": "test_secret_key"},
+]
+
+
+@pytest.mark.parametrize("vault_creds", AWS_IAM_VAULT_CREDS)
+@patch("vault_anyconfig.vault_anyconfig.Client.auth_aws_iam")
+@patch("vault_anyconfig.vault_anyconfig.Client.is_authenticated")
+@patch("vault_anyconfig.vault_anyconfig.loads_base")
+def test_auto_auth_aws_iam_method(mock_load, mock_is_authenticated, mock_auth_aws_iam, vault_creds, localhost_client):
+    """
+    Test that the aws_iam method *with* hardcoded aws creds is called directly
+    """
+    local_vault_creds = {"vault_creds": {"auth_method": "aws_iam", "role": "test_role"}}
+    local_vault_creds["vault_creds"].update(vault_creds)
+
+    mock_load.return_value = local_vault_creds
+    mock_is_authenticated.return_value = False
+
+    localhost_client.auto_auth("config.json", ac_parser="test_parser")
+    mock_load.assert_called_with("config.json", ac_parser="test_parser")
+    mock_auth_aws_iam.assert_called_with(**vault_creds, role="test_role")
+
+
+@pytest.mark.parametrize("vault_creds", AWS_IAM_VAULT_CREDS)
+@patch("boto3.Session.get_credentials")
+@patch("vault_anyconfig.vault_anyconfig.Client.auth_aws_iam")
+@patch("vault_anyconfig.vault_anyconfig.Client.is_authenticated")
+@patch("vault_anyconfig.vault_anyconfig.loads_base")
+def test_auto_auth_aws_iam_method_role_only(
+    mock_load, mock_is_authenticated, mock_auth_aws_iam, mock_get_credentials, vault_creds, localhost_client
+):
+    """
+    Test that the aws_iam method *with only* hardcoded aws creds pulls creds
+    from AWS SDK defaults
+    """
+    local_vault_creds = {"vault_creds": {"auth_method": "aws_iam", "role": "test_role"}}
+    mock_load.return_value = local_vault_creds
+
+    # we're mocking botocore.credentials.Credentials which uses `token` not `session_token`
+    local_boto_creds = Mock(
+        access_key=vault_creds["access_key"],
+        secret_key=vault_creds["secret_key"],
+        token=vault_creds.get("session_token", None),
+    )
+    mock_get_credentials.return_value = local_boto_creds
+
+    mock_is_authenticated.return_value = False
+
+    localhost_client.auto_auth("config.json", ac_parser="test_parser")
+    mock_load.assert_called_with("config.json", ac_parser="test_parser")
+    mock_auth_aws_iam.assert_called_with(**vault_creds, role="test_role")
 
 
 @patch("vault_anyconfig.vault_anyconfig.Client.auth_kubernetes")
